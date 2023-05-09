@@ -21,6 +21,8 @@ fn main() {
         )
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(GridPlugin)
+        .add_plugin(GameCameraPlugin)
+        .init_resource::<Keybinds>()
         .insert_resource(ClearColor(Color::hex("#87CDED").unwrap()))
         .add_startup_systems((spawn_camera, spawn_plane, spawn_light))
         .run();

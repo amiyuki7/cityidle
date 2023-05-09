@@ -1,8 +1,11 @@
 use bevy::prelude::*;
 
+pub mod camera;
 pub mod grid;
 
+pub use camera::*;
 pub use grid::*;
+
 use bevy::window::CursorGrabMode;
 
 #[derive(Resource)]
