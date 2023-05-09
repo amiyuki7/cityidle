@@ -31,7 +31,7 @@ pub fn spawn_tile(
         .spawn(PbrBundle {
             mesh: meshes.add(shape::Plane::from_size(4.0).into()),
             material: default_highlight,
-            transform: Transform::from_xyz(0.0, 0.01, 0.0),
+            transform: Transform::from_xyz(0.0, 0.001, 0.0),
             ..default()
         })
         .insert(PickableBundle::default())

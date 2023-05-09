@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::WindowResolution};
+use bevy::{prelude::*, window::WindowMode};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::prelude::*;
 use cityidle::*;
@@ -7,34 +7,28 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                resolution: WindowResolution::new(1920.0, 1080.0),
                 title: "City Idle".into(),
+                mode: WindowMode::BorderlessFullscreen,
                 resizable: false,
                 ..default()
             }),
             ..default()
         }))
         .add_plugins(
-            DefaultPickingPlugins
-                .build()
-                .disable::<DebugPickingPlugin>(),
+            DefaultPickingPlugins.build(),
+            // .disable::<DebugPickingPlugin>(),
         )
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(GridPlugin)
         .add_plugin(GameCameraPlugin)
         .init_resource::<Keybinds>()
         .insert_resource(ClearColor(Color::hex("#87CDED").unwrap()))
-        .add_startup_systems((spawn_camera, spawn_plane, spawn_light))
-        .run();
-}
-
-fn spawn_camera(mut commands: Commands) {
-    commands
-        .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(5.0, 2.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
+        .insert_resource(AmbientLight {
+            color: Color::WHITE,
+            brightness: 0.2,
         })
-        .insert(RaycastPickCamera::default());
+        .add_startup_systems((spawn_plane, spawn_light))
+        .run();
 }
 
 fn spawn_plane(
@@ -52,17 +46,27 @@ fn spawn_plane(
             ..default()
         })
         .insert(Name::new("Plane"));
+
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            material: materials.add(Color::BLUE.into()),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            ..default()
+        })
+        .insert(Name::new("Cube"));
 }
 
 fn spawn_light(mut commands: Commands) {
     commands
         .spawn(PointLightBundle {
             point_light: PointLight {
-                intensity: 2000.0,
+                intensity: 1500.0,
                 shadows_enabled: true,
+                color: Color::WHITE,
                 ..default()
             },
-            transform: Transform::from_xyz(0.0, 10.0, 0.0),
+            transform: Transform::from_xyz(0.0, 8.0, 0.0),
             ..default()
         })
         .insert(Name::new("Light"));
