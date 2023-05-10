@@ -16,7 +16,7 @@ impl Default for InputSettings {
     fn default() -> Self {
         Self {
             sense: 30.0,
-            speed: 4.0,
+            speed: 1000.0,
         }
     }
 }
@@ -97,10 +97,12 @@ fn keys_move_camera(
             if *key == keybinds.move_left {
                 velocity -= right;
             }
-            if *key == keybinds.move_up {
+
+            if camera_transform.translation.y < 2000.0 && *key == keybinds.move_up {
                 velocity += Vec3::Y;
             }
-            if *key == keybinds.move_down {
+
+            if camera_transform.translation.y > 10.0 && *key == keybinds.move_down {
                 velocity -= Vec3::Y;
             }
         }
