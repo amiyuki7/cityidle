@@ -2,7 +2,7 @@ use bevy_mod_picking::prelude::*;
 
 use crate::*;
 
-const TILE_SIZE: f32 = 1000.0;
+const TILE_SIZE: f32 = 10.0;
 
 pub struct GridPlugin;
 
@@ -14,9 +14,15 @@ impl Plugin for GridPlugin {
     }
 }
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect, Debug, Default)]
 pub struct Tile {
     occupied: bool,
+}
+
+impl Tile {
+    fn new() -> Self {
+        Self::default()
+    }
 }
 
 pub fn spawn_grid(
@@ -70,18 +76,17 @@ pub fn spawn_tile(
                 mesh,
                 material: default_material,
                 transform: Transform::from_xyz(
-                    0.0 + TILE_SIZE * x_offset as f32,
+                    TILE_SIZE * x_offset as f32,
                     0.0,
-                    0.0 + TILE_SIZE * z_offset as f32,
+                    TILE_SIZE * z_offset as f32,
                 ),
                 ..default()
             },
             PickableBundle::default(),
             RaycastPickTarget::default(),
-            OnPointer::<Click>::target_component_mut::<Transform>(|click, transform| {
+            OnPointer::<Click>::target_component_mut::<Tile>(|click, tile| {
                 if click.button == PointerButton::Primary {
-                    let translation = transform.translation;
-                    warn!("{translation:?}");
+                    trace!("{tile:?}");
                 }
             }),
         ))
@@ -90,6 +95,6 @@ pub fn spawn_tile(
             pressed: Some(HighlightKind::Fixed(hover_material.clone())),
             selected: Some(HighlightKind::Fixed(hover_material)),
         })
-        .insert(Tile { occupied: false })
+        .insert(Tile::new())
         .insert(Name::new("Tile"));
 }

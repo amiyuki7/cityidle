@@ -16,7 +16,8 @@ impl Default for InputSettings {
     fn default() -> Self {
         Self {
             sense: 30.0,
-            speed: 1000.0,
+            // speed: 1000.0,
+            speed: 10.0,
         }
     }
 }
@@ -55,7 +56,8 @@ pub struct GameCamera;
 fn setup(mut commands: Commands, mut primary_window: Query<&mut Window, With<PrimaryWindow>>) {
     commands
         .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(80.0, 10.0, 80.0)
+                .looking_at(Vec3::new(70.0, 4.0, 70.0), Vec3::Y),
             ..default()
         })
         .insert(GameCamera);
