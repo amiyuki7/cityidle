@@ -28,9 +28,20 @@ impl Default for Keybinds {
             move_right: KeyCode::D,
             move_up: KeyCode::Space,
             move_down: KeyCode::LShift,
-            toggle_mouse_lock: KeyCode::M,
+            toggle_mouse_lock: KeyCode::F,
         }
     }
+}
+
+#[derive(Resource, Default)]
+pub struct Models {
+    pub bank_scene: Handle<Scene>,
+}
+
+pub fn load_models(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(Models {
+        bank_scene: asset_server.load("bank_low_poly.glb#Scene0"),
+    });
 }
 
 pub fn toggle_cursor_lock(window: &mut Window) {

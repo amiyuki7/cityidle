@@ -43,6 +43,7 @@ fn main() {
             color: Color::WHITE,
             brightness: 0.2,
         })
+        .add_startup_system(load_models.in_base_set(StartupSet::PreStartup))
         .add_startup_system(spawn_light)
         .run();
 }
