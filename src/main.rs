@@ -1,6 +1,6 @@
 use bevy::{prelude::*, window::WindowMode};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_mod_picking::prelude::*;
+use bevy_mod_picking::{prelude::*, selection::SelectionSettings};
 use cityidle::*;
 
 fn main() {
@@ -22,6 +22,10 @@ fn main() {
         .add_plugin(GridPlugin)
         .add_plugin(GameCameraPlugin)
         .init_resource::<Keybinds>()
+        .insert_resource(SelectionSettings {
+            click_nothing_deselect_all: true,
+            use_multiselect_default_inputs: false,
+        })
         .insert_resource(ClearColor(Color::hex("#87CDED").unwrap()))
         .insert_resource(AmbientLight {
             color: Color::WHITE,
@@ -38,17 +42,6 @@ fn spawn_plane(
 ) {
     commands
         .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane {
-                size: 40.0,
-                ..default()
-            })),
-            material: materials.add(Color::GRAY.into()),
-            ..default()
-        })
-        .insert(Name::new("Plane"));
-
-    commands
-        .spawn(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
             material: materials.add(Color::BLUE.into()),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
@@ -61,12 +54,13 @@ fn spawn_light(mut commands: Commands) {
     commands
         .spawn(PointLightBundle {
             point_light: PointLight {
-                intensity: 1500.0,
+                intensity: 2000.0,
+                range: 1000.0,
                 shadows_enabled: true,
                 color: Color::WHITE,
                 ..default()
             },
-            transform: Transform::from_xyz(0.0, 8.0, 0.0),
+            transform: Transform::from_xyz(50.0, 10.0, 50.0),
             ..default()
         })
         .insert(Name::new("Light"));
