@@ -2,9 +2,11 @@ use bevy::prelude::*;
 
 pub mod camera;
 pub mod grid;
+pub mod inventory;
 
 pub use camera::*;
 pub use grid::*;
+pub use inventory::*;
 
 use bevy::window::CursorGrabMode;
 
@@ -17,6 +19,7 @@ pub struct Keybinds {
     pub move_up: KeyCode,
     pub move_down: KeyCode,
     pub toggle_mouse_lock: KeyCode,
+    pub toggle_inventory: KeyCode,
 }
 
 impl Default for Keybinds {
@@ -29,6 +32,7 @@ impl Default for Keybinds {
             move_up: KeyCode::Space,
             move_down: KeyCode::LShift,
             toggle_mouse_lock: KeyCode::F,
+            toggle_inventory: KeyCode::E,
         }
     }
 }

@@ -36,6 +36,7 @@ fn main() {
         .register_type::<CameraState>()
         .add_plugin(StateInspectorPlugin::<CameraState>::default())
         .add_plugin(GameCameraPlugin)
+        .add_plugin(InventoryPlugin)
         .init_resource::<Keybinds>()
         .insert_resource(SelectionSettings {
             click_nothing_deselect_all: true,
