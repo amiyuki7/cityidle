@@ -35,14 +35,12 @@ impl Plugin for GameCameraPlugin {
             .init_resource::<InputSettings>()
             .add_state::<CameraState>()
             .add_system(setup.on_startup())
-            .add_systems(
-                (keys_move_camera, mouse_move_camera).in_set(OnUpdate(CameraState::CursorLocked)),
-            )
+            .add_systems((keys_move_camera, mouse_move_camera))
             .add_system(handle_camera_state);
     }
 }
 
-#[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
+#[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default, Reflect)]
 pub enum CameraState {
     #[default]
     CursorLocked, // Cursor is locked - camera is free to move
@@ -100,11 +98,11 @@ fn keys_move_camera(
                 velocity -= right;
             }
 
-            if camera_transform.translation.y < 2000.0 && *key == keybinds.move_up {
+            if camera_transform.translation.y < 30.0 && *key == keybinds.move_up {
                 velocity += Vec3::Y;
             }
 
-            if camera_transform.translation.y > 10.0 && *key == keybinds.move_down {
+            if camera_transform.translation.y > 5.0 && *key == keybinds.move_down {
                 velocity -= Vec3::Y;
             }
         }
