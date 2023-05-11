@@ -4,7 +4,8 @@ use bevy::{
     input::mouse::MouseMotion,
     window::PrimaryWindow,
 };
-use bevy_mod_picking::prelude::*;
+// use bevy_mod_picking::prelude::*;
+use bevy_mod_picking::prelude::RaycastPickCamera;
 
 #[derive(Resource)]
 pub struct InputSettings {
@@ -33,10 +34,17 @@ impl Plugin for GameCameraPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MouseMotionState>()
             .init_resource::<InputSettings>()
+            .init_resource::<PreviousCameraState>()
             .add_state::<CameraState>()
+            .add_event::<ChangeCameraStateEvent>()
             .add_system(setup.on_startup())
-            .add_systems((keys_move_camera, mouse_move_camera))
-            .add_system(handle_camera_state);
+            .add_systems(
+                (keys_move_camera, mouse_move_camera).in_set(OnUpdate(CameraState::CursorLocked)),
+            )
+            .add_system(
+                toggle_camera_state.run_if(not(state_exists_and_equals(CameraState::Frozen))),
+            )
+            .add_system(on_change_camera_state);
     }
 }
 
@@ -45,7 +53,11 @@ pub enum CameraState {
     #[default]
     CursorLocked, // Cursor is locked - camera is free to move
     CursorUnlocked, // Cursor is unlocked - camera is stationary
+    Frozen,         // Everything is disabled - set to this state when using inventory, shop, etc
 }
+
+#[derive(Resource, Default)]
+pub struct PreviousCameraState(pub Option<CameraState>);
 
 /// Marker component
 #[derive(Component)]
@@ -61,7 +73,8 @@ fn setup(mut commands: Commands, mut primary_window: Query<&mut Window, With<Pri
         .insert(GameCamera);
 
     // Set initial state of cursor to locked
-    toggle_cursor_lock(&mut primary_window.single_mut());
+    // toggle_cursor_lock(&mut primary_window.single_mut());
+    set_cursor_lock(&mut primary_window.single_mut(), true);
 }
 
 /// Fundamental movement - translates the camera around according to keyboard input
@@ -139,36 +152,70 @@ fn mouse_move_camera(
     }
 }
 
+pub struct ChangeCameraStateEvent(pub CameraState);
+
+fn toggle_camera_state(
+    keys: Res<Input<KeyCode>>,
+    keybinds: Res<Keybinds>,
+    mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>,
+    camera_state: Res<State<CameraState>>,
+) {
+    if keys.just_pressed(keybinds.toggle_mouse_lock) {
+        // send_change_camera_state_event.send(ChangeCameraStateEvent(()))
+        if camera_state.0 == CameraState::CursorLocked {
+            send_change_camera_state_event
+                .send(ChangeCameraStateEvent(CameraState::CursorUnlocked));
+        } else {
+            send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::CursorLocked));
+        }
+    }
+}
+
 /// When the `toggle_mouse_lock` keybind is pressed (default M), switch between the two camera modes
-#[allow(clippy::too_many_arguments)]
-fn handle_camera_state(
+fn on_change_camera_state(
     mut commands: Commands,
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
     camera: Query<Entity, With<GameCamera>>,
     raycast_camera: Query<Entity, (With<GameCamera>, With<RaycastPickCamera>)>,
-    keys: Res<Input<KeyCode>>,
-    keybinds: Res<Keybinds>,
-    camera_state: Res<State<CameraState>>,
     mut next_camera_state: ResMut<NextState<CameraState>>,
+    mut change_camera_state_events: EventReader<ChangeCameraStateEvent>,
 ) {
-    if keys.just_pressed(keybinds.toggle_mouse_lock) {
-        let camera = camera.get_single();
-        let raycast_camera = raycast_camera.get_single();
+    let camera = camera.get_single();
+    let raycast_camera = raycast_camera.get_single();
+    let mut window = primary_window.single_mut();
 
-        // Disable camera raycast when switching to non cursor mode... enable otherwise
-        match raycast_camera {
-            Ok(entity) => commands.entity(entity).remove::<RaycastPickCamera>(),
-            Err(_) => commands
-                .entity(camera.unwrap())
-                .insert(RaycastPickCamera::default()),
-        };
+    for event in change_camera_state_events.iter() {
+        // Change to CursorLock
+        if event.0 == CameraState::CursorLocked {
+            // Disable camera raycast if it exists
+            if let Ok(entity) = raycast_camera {
+                commands.entity(entity).remove::<RaycastPickCamera>();
+            }
 
-        if camera_state.0 == CameraState::CursorLocked {
-            next_camera_state.set(CameraState::CursorUnlocked);
-        } else {
             next_camera_state.set(CameraState::CursorLocked);
+            set_cursor_lock(&mut window, true);
         }
+        // Change the CursorUnlock
+        else if event.0 == CameraState::CursorUnlocked {
+            // Enable camera raycast if it doesn't already exist
+            if raycast_camera.is_err() {
+                commands
+                    .entity(*camera.as_ref().unwrap())
+                    .insert(RaycastPickCamera::default());
+            }
 
-        toggle_cursor_lock(&mut primary_window.single_mut());
+            next_camera_state.set(CameraState::CursorUnlocked);
+            set_cursor_lock(&mut window, false);
+        }
+        // Change to Frozen
+        else if event.0 == CameraState::Frozen {
+            // Disable camera raycast if it exists
+            if let Ok(entity) = raycast_camera {
+                commands.entity(entity).remove::<RaycastPickCamera>();
+            }
+
+            next_camera_state.set(CameraState::Frozen);
+            set_cursor_lock(&mut window, false);
+        }
     }
 }

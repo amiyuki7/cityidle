@@ -44,8 +44,8 @@ pub fn load_models(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 }
 
-pub fn toggle_cursor_lock(window: &mut Window) {
-    if window.cursor.grab_mode == CursorGrabMode::None {
+pub fn set_cursor_lock(window: &mut Window, lock: bool) {
+    if lock {
         window.cursor.grab_mode = CursorGrabMode::Locked;
         window.cursor.visible = false;
     } else {
