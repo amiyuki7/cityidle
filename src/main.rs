@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     window::WindowMode,
 };
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::quick::{StateInspectorPlugin, WorldInspectorPlugin};
 use bevy_mod_picking::{prelude::*, selection::SelectionSettings};
 use cityidle::*;
 
@@ -32,6 +32,9 @@ fn main() {
         )
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(GridPlugin)
+        .add_state::<CameraState>()
+        .register_type::<CameraState>()
+        .add_plugin(StateInspectorPlugin::<CameraState>::default())
         .add_plugin(GameCameraPlugin)
         .init_resource::<Keybinds>()
         .insert_resource(SelectionSettings {
