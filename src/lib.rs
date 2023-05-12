@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
-pub mod camera;
-pub mod grid;
-pub mod inventory;
+mod camera;
+mod grid;
+mod ui;
 
 pub use camera::*;
 pub use grid::*;
-pub use inventory::*;
+pub use ui::*;
 
 use bevy::window::CursorGrabMode;
 

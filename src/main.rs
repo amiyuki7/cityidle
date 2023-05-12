@@ -34,6 +34,7 @@ fn main() {
         .add_plugin(GridPlugin)
         .add_state::<CameraState>()
         .register_type::<CameraState>()
+        .add_state::<UiState>()
         .add_plugin(StateInspectorPlugin::<CameraState>::default())
         .add_plugin(GameCameraPlugin)
         .add_plugin(InventoryPlugin)
