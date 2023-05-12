@@ -70,6 +70,10 @@ pub fn toggle_inventory(
 #[derive(Component, Reflect)]
 struct InventoryUIRoot;
 
+// Marker
+#[derive(Component, Reflect)]
+struct InventoryItemButton;
+
 fn draw_inventory(
     mut commands: Commands,
     inventory: Res<Inventory>,
@@ -203,8 +207,55 @@ fn draw_inventory(
                                 })
                                 .insert(Name::new("Inventory grid container"))
                                 .with_children(|commands| {
+                                    for i in 1..=30 {
+                                        commands
+                                            .spawn(ButtonBundle {
+                                                style: Style {
+                                                    size: Size::new(
+                                                        Val::Percent(100.0 / (5.0 / 0.9)),
+                                                        Val::Percent(100.0 / (6.0 / 0.9)),
+                                                    ),
+                                                    ..default()
+                                                },
+                                                background_color: Color::rgb(0.22, 0.25, 0.48)
+                                                    .into(),
+                                                ..default()
+                                            })
+                                            .with_children(|commands| {
+                                                // Quantity text
+                                                commands
+                                                    .spawn(TextBundle {
+                                                        style: Style {
+                                                            size: Size::new(
+                                                                Val::Percent(25.0),
+                                                                Val::Percent(30.0),
+                                                            ),
+                                                            position: UiRect::new(
+                                                                Val::Percent(5.0),
+                                                                Val::Percent(0.0),
+                                                                Val::Percent(65.0),
+                                                                Val::Percent(0.0),
+                                                            ),
+                                                            ..default()
+                                                        },
+                                                        text: Text::from_section(
+                                                            i.to_string(),
+                                                            TextStyle {
+                                                                font: asset_server.load("font.otf"),
+                                                                font_size: physical_screen_height
+                                                                    / 108.0,
+                                                                color: Color::WHITE,
+                                                            },
+                                                        ),
+                                                        ..default()
+                                                    })
+                                                    .insert(Name::new("Quantity text"));
+                                            })
+                                            .insert(InventoryItemButton);
+                                    }
                                 });
                         });
+
                     // Item stats container
                     commands
                         .spawn(NodeBundle {
