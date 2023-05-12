@@ -64,6 +64,19 @@ pub struct PreviousCameraState(pub Option<CameraState>);
 pub struct GameCamera;
 
 fn setup(mut commands: Commands, mut primary_window: Query<&mut Window, With<PrimaryWindow>>) {
+    let window = primary_window.single();
+    debug!(
+        "Physical height: {}, Logic height: {}",
+        window.resolution.physical_height(),
+        window.resolution.height()
+    );
+
+    debug!(
+        "Physical width: {}, Logic width: {}",
+        window.resolution.physical_width(),
+        window.resolution.width()
+    );
+
     commands
         .spawn(Camera3dBundle {
             transform: Transform::from_xyz(80.0, 10.0, 80.0)
