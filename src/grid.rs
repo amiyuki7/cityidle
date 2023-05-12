@@ -44,7 +44,7 @@ impl Tile {
     }
 }
 
-#[derive(Reflect, FromReflect, Debug)]
+#[derive(Reflect, FromReflect, Debug, PartialEq)]
 pub enum BuildingType {
     Bank,
 }
