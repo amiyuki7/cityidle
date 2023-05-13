@@ -32,7 +32,7 @@ impl Plugin for InventoryPlugin {
             .add_system(toggle_inventory)
             .add_system(draw_inventory.in_schedule(OnEnter(UiState::Inventory)))
             .add_system(undraw_inventory.in_schedule(OnExit(UiState::Inventory)))
-            .add_system(hovered_item_button.in_set(OnUpdate(UiState::Inventory)));
+            .add_system(item_button_interaction.in_set(OnUpdate(UiState::Inventory)));
     }
 }
 
@@ -306,12 +306,204 @@ fn draw_inventory(
                         .spawn(NodeBundle {
                             style: Style {
                                 size: Size::new(Val::Percent(45.0), Val::Percent(90.0)),
+                                flex_direction: FlexDirection::Column,
                                 ..default()
                             },
                             background_color: Color::rgb(0.17, 0.19, 0.36).into(),
                             ..default()
                         })
-                        .insert(Name::new("Item stats container"));
+                        .insert(Name::new("Item stats container"))
+                        .with_children(|commands| {
+                            // Item name
+                            commands
+                                .spawn(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(10.0)),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    background_color: Color::RED.into(),
+                                    ..default()
+                                })
+                                .insert(Name::new("Item name text wrapper"))
+                                .with_children(|commands| {
+                                    commands
+                                        .spawn(TextBundle::from_section(
+                                            "Item name",
+                                            TextStyle {
+                                                font: asset_server.load("font.otf"),
+                                                font_size: physical_screen_height / 60.0,
+                                                color: Color::WHITE,
+                                            },
+                                        ))
+                                        .insert(Name::new("Item name text"));
+                                });
+
+                            // Item image
+                            commands
+                                .spawn(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(50.0)),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    background_color: Color::PURPLE.into(),
+                                    ..default()
+                                })
+                                .insert(Name::new("Item image wrapper"))
+                                .with_children(|commands| {
+                                    commands
+                                        .spawn(ImageBundle {
+                                            image: item_icons.nougat.clone().into(),
+                                            style: Style {
+                                                size: Size::new(Val::Percent(50.0), Val::Percent(100.0)),
+                                                ..default()
+                                            },
+                                            transform: Transform::from_scale(Vec3::splat(0.8)),
+                                            ..default()
+                                        })
+                                        .insert(Name::new("Item image"));
+                                });
+
+                            // Quantity text
+                            commands
+                                .spawn(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(5.0)),
+                                        flex_direction: FlexDirection::Column,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::FlexStart,
+                                        ..default()
+                                    },
+                                    background_color: Color::RED.into(),
+                                    ..default()
+                                })
+                                .insert(Name::new("Item quantity text wrapper"))
+                                .with_children(|commands| {
+                                    commands
+                                        .spawn(TextBundle {
+                                            style: Style {
+                                                margin: UiRect::left(Val::Percent(5.0)),
+                                                ..default()
+                                            },
+                                            text: Text::from_section(
+                                                "Quantity: #",
+                                                TextStyle {
+                                                    font: asset_server.load("font.otf"),
+                                                    font_size: physical_screen_height / 90.0,
+                                                    color: Color::WHITE,
+                                                },
+                                            ),
+                                            ..default()
+                                        })
+                                        .insert(Name::new("Item quantity text"));
+                                });
+
+                            // Sell price text
+                            commands
+                                .spawn(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(5.0)),
+                                        flex_direction: FlexDirection::Column,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::FlexStart,
+                                        ..default()
+                                    },
+                                    background_color: Color::PURPLE.into(),
+                                    ..default()
+                                })
+                                .insert(Name::new("Item sell price text wrapper"))
+                                .with_children(|commands| {
+                                    commands
+                                        .spawn(TextBundle {
+                                            style: Style {
+                                                margin: UiRect::left(Val::Percent(5.0)),
+                                                ..default()
+                                            },
+                                            text: Text::from_section(
+                                                "Sell: $",
+                                                TextStyle {
+                                                    font: asset_server.load("font.otf"),
+                                                    font_size: physical_screen_height / 90.0,
+                                                    color: Color::WHITE,
+                                                },
+                                            ),
+                                            ..default()
+                                        })
+                                        .insert(Name::new("Item sell price text"));
+                                });
+
+                            // Quantity selector
+                            commands
+                                .spawn(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(10.0)),
+                                        flex_direction: FlexDirection::Row,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    background_color: Color::PINK.into(),
+                                    ..default()
+                                })
+                                .with_children(|commands| {
+                                    spawn_quantity_increment_button(
+                                        commands,
+                                        &asset_server,
+                                        -10,
+                                        physical_screen_height,
+                                    );
+
+                                    spawn_quantity_increment_button(
+                                        commands,
+                                        &asset_server,
+                                        -1,
+                                        physical_screen_height,
+                                    );
+
+                                    // Quantity selected
+                                    commands.spawn(TextBundle {
+                                        style: Style {
+                                            margin: UiRect::new(
+                                                Val::Percent(5.0),
+                                                Val::Percent(5.0),
+                                                Val::Percent(0.0),
+                                                Val::Percent(0.0),
+                                            ),
+                                            ..default()
+                                        },
+                                        text: Text::from_section(
+                                            "42",
+                                            TextStyle {
+                                                font: asset_server.load("font.otf"),
+                                                font_size: physical_screen_height / 60.0,
+                                                color: Color::GREEN,
+                                            },
+                                        ),
+                                        ..default()
+                                    });
+
+                                    spawn_quantity_increment_button(commands, &asset_server, 1, physical_screen_height);
+
+                                    spawn_quantity_increment_button(
+                                        commands,
+                                        &asset_server,
+                                        10,
+                                        physical_screen_height,
+                                    );
+                                });
+
+                            commands.spawn(NodeBundle {
+                                style: Style {
+                                    size: Size::new(Val::Percent(100.0), Val::Percent(20.0)),
+                                    ..default()
+                                },
+                                background_color: Color::RED.into(),
+                                ..default()
+                            });
+                        });
                 });
         });
 }
@@ -322,8 +514,12 @@ fn undraw_inventory(mut commands: Commands, ui_root: Query<Entity, With<Inventor
     }
 }
 
-fn hovered_item_button(
-    mut interaction_query: Query<(&Interaction, &mut BackgroundColor, &InventoryItemButton), Changed<Interaction>>,
+#[allow(clippy::complexity)]
+fn item_button_interaction(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &InventoryItemButton),
+        (Changed<Interaction>, With<InventoryItemButton>),
+    >,
 ) {
     for (interaction, mut background_colour, item_button_cmp) in interaction_query.iter_mut() {
         if matches!(interaction, Interaction::Hovered) {
@@ -333,4 +529,34 @@ fn hovered_item_button(
             *background_colour = Color::rgb(0.22, 0.25, 0.48).into()
         }
     }
+}
+
+// TODO: Add Increment { val: i8 } component
+fn spawn_quantity_increment_button(
+    commands: &mut ChildBuilder,
+    asset_server: &AssetServer,
+    amount: i8,
+    physical_screen_height: f32,
+) {
+    commands
+        .spawn(ButtonBundle {
+            style: Style {
+                size: Size::new(Val::Percent(10.0), Val::Percent(50.0)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            background_color: Color::GRAY.into(),
+            ..default()
+        })
+        .with_children(|commands| {
+            commands.spawn(TextBundle::from_section(
+                amount.to_string(),
+                TextStyle {
+                    font: asset_server.load("font.otf"),
+                    font_size: physical_screen_height / 90.0,
+                    color: Color::WHITE,
+                },
+            ));
+        });
 }
