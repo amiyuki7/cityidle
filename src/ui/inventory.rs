@@ -197,7 +197,7 @@ fn draw_inventory(
                             commands
                                 .spawn(NodeBundle {
                                     style: Style {
-                                        size: Size::new(Val::Percent(80.0), Val::Percent(80.0)),
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(80.0)),
                                         flex_direction: FlexDirection::Row,
                                         // align_items: AlignItems::FlexEnd,
                                         justify_content: JustifyContent::SpaceAround,
@@ -218,8 +218,7 @@ fn draw_inventory(
                                                         Val::Percent(100.0 / (5.0 / 0.9)),
                                                         Val::Percent(100.0 / (6.0 / 0.9)),
                                                     ),
-                                                    // align_content: AlignContent::Center,
-                                                    // align_self: AlignSelf::Center,
+                                                    justify_content: JustifyContent::Center,
                                                     ..default()
                                                 },
                                                 background_color: Color::rgb(0.22, 0.25, 0.48).into(),
@@ -239,7 +238,11 @@ fn draw_inventory(
                                                 // Item icon
                                                 commands.spawn(ImageBundle {
                                                     style: Style {
-                                                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                                                        // size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                                                        size: Size::new(
+                                                            Val::Percent(5.0 * (100.0 / 6.0)),
+                                                            Val::Percent(5.0 * (100.0 / 5.0)),
+                                                        ),
                                                         ..default()
                                                     },
                                                     image: UiImage {
