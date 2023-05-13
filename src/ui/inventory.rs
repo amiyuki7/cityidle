@@ -17,7 +17,7 @@ impl Default for Inventory {
             items: [
                 Item::new(ItemType::Taffy, 20),
                 Item::new(ItemType::Nougat, 10),
-                Item::new(ItemType::Marshmallow, 5),
+                Item::new(ItemType::Marshmallow, 0),
             ],
             balance: 100,
         }
@@ -29,10 +29,21 @@ pub struct InventoryPlugin;
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Inventory>()
+            .init_resource::<SelectedItemStats>()
+            .add_event::<ChangeItemStatsEvent>()
+            .add_event::<IncrementEvent>()
             .add_system(toggle_inventory)
             .add_system(draw_inventory.in_schedule(OnEnter(UiState::Inventory)))
             .add_system(undraw_inventory.in_schedule(OnExit(UiState::Inventory)))
-            .add_system(item_button_interaction.in_set(OnUpdate(UiState::Inventory)));
+            .add_systems(
+                (
+                    item_button_interaction,
+                    increment_button_interaction,
+                    change_item_stats,
+                    change_sell_quantity,
+                )
+                    .in_set(OnUpdate(UiState::Inventory)),
+            );
     }
 }
 
@@ -69,11 +80,34 @@ pub fn toggle_inventory(
 #[derive(Component, Reflect)]
 struct InventoryUIRoot;
 
-// Marker
 #[derive(Component, Reflect)]
 struct InventoryItemButton {
     item_type: Option<ItemType>,
 }
+
+// Marker
+#[derive(Component)]
+struct ItemStatsName;
+
+// Marker
+#[derive(Component)]
+struct ItemStatsImage;
+
+// Marker
+#[derive(Component)]
+struct ItemStatsQuantity;
+
+// Marker
+#[derive(Component)]
+struct ItemStatsSellPrice;
+
+// Marker
+#[derive(Component)]
+struct ItemStatsSellQuantity(u32);
+
+// Marker
+#[derive(Component)]
+struct SellButton;
 
 fn draw_inventory(
     mut commands: Commands,
@@ -282,7 +316,7 @@ fn draw_inventory(
                                                         text: Text::from_section(
                                                             {
                                                                 if i < inventory.items.len() {
-                                                                    inventory.items[i].qty.to_string()
+                                                                    inventory.items[i].quantity.to_string()
                                                                 } else {
                                                                     "-".to_string()
                                                                 }
@@ -321,9 +355,9 @@ fn draw_inventory(
                                         size: Size::new(Val::Percent(100.0), Val::Percent(10.0)),
                                         justify_content: JustifyContent::Center,
                                         align_items: AlignItems::Center,
+                                        margin: UiRect::top(Val::Percent(5.0)),
                                         ..default()
                                     },
-                                    background_color: Color::RED.into(),
                                     ..default()
                                 })
                                 .insert(Name::new("Item name text wrapper"))
@@ -337,6 +371,7 @@ fn draw_inventory(
                                                 color: Color::WHITE,
                                             },
                                         ))
+                                        .insert(ItemStatsName)
                                         .insert(Name::new("Item name text"));
                                 });
 
@@ -349,14 +384,13 @@ fn draw_inventory(
                                         align_items: AlignItems::Center,
                                         ..default()
                                     },
-                                    background_color: Color::PURPLE.into(),
                                     ..default()
                                 })
                                 .insert(Name::new("Item image wrapper"))
                                 .with_children(|commands| {
                                     commands
                                         .spawn(ImageBundle {
-                                            image: item_icons.nougat.clone().into(),
+                                            image: item_icons.empty.clone().into(),
                                             style: Style {
                                                 size: Size::new(Val::Percent(50.0), Val::Percent(100.0)),
                                                 ..default()
@@ -364,6 +398,7 @@ fn draw_inventory(
                                             transform: Transform::from_scale(Vec3::splat(0.8)),
                                             ..default()
                                         })
+                                        .insert(ItemStatsImage)
                                         .insert(Name::new("Item image"));
                                 });
 
@@ -377,7 +412,6 @@ fn draw_inventory(
                                         align_items: AlignItems::FlexStart,
                                         ..default()
                                     },
-                                    background_color: Color::RED.into(),
                                     ..default()
                                 })
                                 .insert(Name::new("Item quantity text wrapper"))
@@ -398,6 +432,7 @@ fn draw_inventory(
                                             ),
                                             ..default()
                                         })
+                                        .insert(ItemStatsQuantity)
                                         .insert(Name::new("Item quantity text"));
                                 });
 
@@ -411,7 +446,6 @@ fn draw_inventory(
                                         align_items: AlignItems::FlexStart,
                                         ..default()
                                     },
-                                    background_color: Color::PURPLE.into(),
                                     ..default()
                                 })
                                 .insert(Name::new("Item sell price text wrapper"))
@@ -432,6 +466,7 @@ fn draw_inventory(
                                             ),
                                             ..default()
                                         })
+                                        .insert(ItemStatsSellPrice)
                                         .insert(Name::new("Item sell price text"));
                                 });
 
@@ -445,7 +480,6 @@ fn draw_inventory(
                                         align_items: AlignItems::Center,
                                         ..default()
                                     },
-                                    background_color: Color::PINK.into(),
                                     ..default()
                                 })
                                 .with_children(|commands| {
@@ -464,26 +498,28 @@ fn draw_inventory(
                                     );
 
                                     // Quantity selected
-                                    commands.spawn(TextBundle {
-                                        style: Style {
-                                            margin: UiRect::new(
-                                                Val::Percent(5.0),
-                                                Val::Percent(5.0),
-                                                Val::Percent(0.0),
-                                                Val::Percent(0.0),
+                                    commands
+                                        .spawn(TextBundle {
+                                            style: Style {
+                                                margin: UiRect::new(
+                                                    Val::Percent(5.0),
+                                                    Val::Percent(5.0),
+                                                    Val::Percent(0.0),
+                                                    Val::Percent(0.0),
+                                                ),
+                                                ..default()
+                                            },
+                                            text: Text::from_section(
+                                                "0",
+                                                TextStyle {
+                                                    font: asset_server.load("font.otf"),
+                                                    font_size: physical_screen_height / 60.0,
+                                                    color: Color::GREEN,
+                                                },
                                             ),
                                             ..default()
-                                        },
-                                        text: Text::from_section(
-                                            "42",
-                                            TextStyle {
-                                                font: asset_server.load("font.otf"),
-                                                font_size: physical_screen_height / 60.0,
-                                                color: Color::GREEN,
-                                            },
-                                        ),
-                                        ..default()
-                                    });
+                                        })
+                                        .insert(ItemStatsSellQuantity(0));
 
                                     spawn_quantity_increment_button(commands, &asset_server, 1, physical_screen_height);
 
@@ -495,14 +531,42 @@ fn draw_inventory(
                                     );
                                 });
 
-                            commands.spawn(NodeBundle {
-                                style: Style {
-                                    size: Size::new(Val::Percent(100.0), Val::Percent(20.0)),
+                            // Sell button
+                            commands
+                                .spawn(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(20.0)),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
                                     ..default()
-                                },
-                                background_color: Color::RED.into(),
-                                ..default()
-                            });
+                                })
+                                .with_children(|commands| {
+                                    commands
+                                        .spawn(ButtonBundle {
+                                            style: Style {
+                                                size: Size::new(Val::Percent(30.0), Val::Percent(50.0)),
+                                                justify_content: JustifyContent::Center,
+                                                align_items: AlignItems::Center,
+                                                ..default()
+                                            },
+                                            background_color: Color::rgb(0.22, 0.25, 0.48).into(),
+                                            ..default()
+                                        })
+                                        .insert(SellButton)
+                                        .insert(Name::new("Sell button"))
+                                        .with_children(|commands| {
+                                            commands.spawn(TextBundle::from_section(
+                                                "SELL",
+                                                TextStyle {
+                                                    font: asset_server.load("font.otf"),
+                                                    font_size: physical_screen_height / 60.0,
+                                                    color: Color::WHITE,
+                                                },
+                                            ));
+                                        });
+                                });
                         });
                 });
         });
@@ -514,24 +578,159 @@ fn undraw_inventory(mut commands: Commands, ui_root: Query<Entity, With<Inventor
     }
 }
 
+struct IncrementEvent(i8);
+
+#[allow(clippy::complexity)]
+fn increment_button_interaction(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &IncrementButton),
+        (Changed<Interaction>, With<IncrementButton>),
+    >,
+    mut send_increment_event: EventWriter<IncrementEvent>,
+) {
+    for (interaction, mut background_colour, IncrementButton(amount)) in interaction_query.iter_mut() {
+        match interaction {
+            Interaction::Clicked => {
+                send_increment_event.send(IncrementEvent(*amount));
+            }
+            Interaction::Hovered => *background_colour = Color::rgb(0.25, 0.26, 0.38).into(),
+            _ => *background_colour = Color::rgb(0.13, 0.14, 0.26).into(),
+        }
+    }
+}
+
+fn change_sell_quantity(
+    mut increment_events: EventReader<IncrementEvent>,
+    selected_item_stats: Res<SelectedItemStats>,
+    mut sell_quantity_query: Query<(&mut Text, &mut ItemStatsSellQuantity)>,
+) {
+    for event in increment_events.iter() {
+        if let Ok((mut text, mut sell_quantity)) = sell_quantity_query.get_single_mut() {
+            let sq = &mut sell_quantity.0;
+
+            let IncrementEvent(amount) = *event;
+            let SelectedItemStats {
+                item_type,
+                quantity,
+                sell_price,
+            } = *selected_item_stats;
+
+            if amount.is_positive() {
+                *sq += amount as u32;
+            } else {
+                // Negative value - decrement
+                let abs_decrement = amount.unsigned_abs() as u32;
+                if abs_decrement <= *sq {
+                    *sq -= abs_decrement;
+                } else {
+                    // Subtracting too much sets it to 0, e.g. subtracting 10 from 7
+                    *sq = 0;
+                }
+            }
+
+            text.sections[0].value = sq.to_string();
+
+            if *sq <= quantity {
+                text.sections[0].style.color = Color::GREEN;
+            } else {
+                text.sections[0].style.color = Color::RED;
+            }
+        }
+    }
+}
+
+struct ChangeItemStatsEvent {
+    name: String,
+    image: Handle<Image>,
+    quantity: u32,
+    sell_price: u32,
+}
+
+#[derive(Resource, Default)]
+struct SelectedItemStats {
+    item_type: Option<ItemType>,
+    quantity: u32,
+    sell_price: u32,
+}
+
 #[allow(clippy::complexity)]
 fn item_button_interaction(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, &InventoryItemButton),
         (Changed<Interaction>, With<InventoryItemButton>),
     >,
+    inventory: Res<Inventory>,
+    item_icons: Res<ItemIcons>,
+    mut selected_item_stats: ResMut<SelectedItemStats>,
+    mut send_change_item_stats_event: EventWriter<ChangeItemStatsEvent>,
 ) {
     for (interaction, mut background_colour, item_button_cmp) in interaction_query.iter_mut() {
-        if matches!(interaction, Interaction::Hovered) {
-            *background_colour = Color::GREEN.into();
-            debug!("{:?}", item_button_cmp.item_type);
-        } else {
-            *background_colour = Color::rgb(0.22, 0.25, 0.48).into()
+        match interaction {
+            Interaction::Clicked => {
+                if let Some(item_type) = item_button_cmp.item_type {
+                    let target_item = inventory.items.iter().find(|item| item.item_type == item_type).unwrap();
+
+                    *selected_item_stats = SelectedItemStats {
+                        item_type: Some(item_type),
+                        quantity: target_item.quantity,
+                        sell_price: target_item.sell_price,
+                    };
+
+                    send_change_item_stats_event.send(ChangeItemStatsEvent {
+                        name: target_item.name.clone(),
+                        image: match item_type {
+                            ItemType::Taffy => item_icons.taffy.clone(),
+                            ItemType::Nougat => item_icons.nougat.clone(),
+                            ItemType::Marshmallow => item_icons.marshmallow.clone(),
+                        },
+                        quantity: target_item.quantity,
+                        sell_price: target_item.sell_price,
+                    });
+                }
+            }
+            Interaction::Hovered => *background_colour = Color::rgb(0.34, 0.37, 0.60).into(),
+            _ => *background_colour = Color::rgb(0.22, 0.25, 0.48).into(),
         }
     }
 }
 
-// TODO: Add Increment { val: i8 } component
+#[allow(clippy::complexity)]
+fn change_item_stats(
+    mut image: Query<&mut UiImage, With<ItemStatsImage>>,
+    mut param_set: ParamSet<(
+        Query<&mut Text, With<ItemStatsName>>,
+        Query<&mut Text, With<ItemStatsQuantity>>,
+        Query<&mut Text, With<ItemStatsSellPrice>>,
+        Query<(&mut Text, &mut ItemStatsSellQuantity)>,
+    )>,
+    mut change_item_stats_events: EventReader<ChangeItemStatsEvent>,
+) {
+    for event in change_item_stats_events.iter() {
+        let mut image = image.single_mut();
+        image.texture = event.image.clone();
+
+        for mut name in param_set.p0().iter_mut() {
+            name.sections[0].value = event.name.clone();
+        }
+        for mut quantity in param_set.p1().iter_mut() {
+            quantity.sections[0].value = format!("Quantity: {}", event.quantity);
+        }
+        for mut sell_price in param_set.p2().iter_mut() {
+            sell_price.sections[0].value = format!("Sell Price: ${}", event.sell_price);
+        }
+
+        // Reset sell quantity text
+        if let Ok((mut text, mut sell_quantity)) = param_set.p3().get_single_mut() {
+            sell_quantity.0 = 0;
+            text.sections[0].value = "0".to_string();
+            text.sections[0].style.color = Color::GREEN;
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct IncrementButton(i8);
+
 fn spawn_quantity_increment_button(
     commands: &mut ChildBuilder,
     asset_server: &AssetServer,
@@ -544,14 +743,21 @@ fn spawn_quantity_increment_button(
                 size: Size::new(Val::Percent(10.0), Val::Percent(50.0)),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                margin: UiRect::new(
+                    Val::Percent(2.0),
+                    Val::Percent(2.0),
+                    Val::Percent(0.0),
+                    Val::Percent(0.0),
+                ),
                 ..default()
             },
-            background_color: Color::GRAY.into(),
+            background_color: Color::rgb(0.13, 0.14, 0.26).into(),
             ..default()
         })
+        .insert(IncrementButton(amount))
         .with_children(|commands| {
             commands.spawn(TextBundle::from_section(
-                amount.to_string(),
+                format!("{}{}", if amount.is_positive() { "+" } else { "-" }, amount.abs()),
                 TextStyle {
                     font: asset_server.load("font.otf"),
                     font_size: physical_screen_height / 90.0,
