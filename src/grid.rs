@@ -36,11 +36,7 @@ pub struct Tile {
 
 impl Tile {
     fn new(x: f32, z: f32) -> Self {
-        Self {
-            building: None,
-            x,
-            z,
-        }
+        Self { building: None, x, z }
     }
 }
 

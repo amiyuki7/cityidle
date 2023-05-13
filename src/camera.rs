@@ -38,12 +38,8 @@ impl Plugin for GameCameraPlugin {
             .add_state::<CameraState>()
             .add_event::<ChangeCameraStateEvent>()
             .add_system(setup.on_startup())
-            .add_systems(
-                (keys_move_camera, mouse_move_camera).in_set(OnUpdate(CameraState::CursorLocked)),
-            )
-            .add_system(
-                toggle_camera_state.run_if(not(state_exists_and_equals(CameraState::Frozen))),
-            )
+            .add_systems((keys_move_camera, mouse_move_camera).in_set(OnUpdate(CameraState::CursorLocked)))
+            .add_system(toggle_camera_state.run_if(not(state_exists_and_equals(CameraState::Frozen))))
             .add_system(on_change_camera_state);
     }
 }
@@ -79,8 +75,7 @@ fn setup(mut commands: Commands, mut primary_window: Query<&mut Window, With<Pri
 
     commands
         .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(80.0, 10.0, 80.0)
-                .looking_at(Vec3::new(70.0, 4.0, 70.0), Vec3::Y),
+            transform: Transform::from_xyz(80.0, 10.0, 80.0).looking_at(Vec3::new(70.0, 4.0, 70.0), Vec3::Y),
             ..default()
         })
         .insert(GameCamera);
@@ -134,8 +129,7 @@ fn keys_move_camera(
         }
 
         // Normalize velocity vector so that going forward + right does not make you faster than going forward
-        camera_transform.translation +=
-            velocity.normalize_or_zero() * time.delta_seconds() * settings.speed;
+        camera_transform.translation += velocity.normalize_or_zero() * time.delta_seconds() * settings.speed;
     }
 }
 
@@ -159,8 +153,7 @@ fn mouse_move_camera(
 
             pitch = pitch.clamp(-1.54, 1.54);
 
-            camera_transform.rotation =
-                Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+            camera_transform.rotation = Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
         }
     }
 }
@@ -176,8 +169,7 @@ fn toggle_camera_state(
     if keys.just_pressed(keybinds.toggle_mouse_lock) {
         // send_change_camera_state_event.send(ChangeCameraStateEvent(()))
         if camera_state.0 == CameraState::CursorLocked {
-            send_change_camera_state_event
-                .send(ChangeCameraStateEvent(CameraState::CursorUnlocked));
+            send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::CursorUnlocked));
         } else {
             send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::CursorLocked));
         }

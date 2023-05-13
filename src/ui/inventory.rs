@@ -53,9 +53,7 @@ pub fn toggle_inventory(
         // TODO: Hide inventory UI
         next_ui_state.set(UiState::None);
         // Restore camera state
-        send_change_camera_state_event.send(ChangeCameraStateEvent(
-            previous_camera_state.0.clone().unwrap(),
-        ));
+        send_change_camera_state_event.send(ChangeCameraStateEvent(previous_camera_state.0.clone().unwrap()));
     } else if ui_state.0 == UiState::None {
         // Save camera state
         previous_camera_state.0 = Some(camera_state.0.clone());
@@ -219,34 +217,24 @@ fn draw_inventory(
                                                     align_content: AlignContent::Center,
                                                     ..default()
                                                 },
-                                                background_color: Color::rgb(0.22, 0.25, 0.48)
-                                                    .into(),
+                                                background_color: Color::rgb(0.22, 0.25, 0.48).into(),
                                                 ..default()
                                             })
                                             .with_children(|commands| {
                                                 // Item icon
                                                 commands.spawn(ImageBundle {
                                                     style: Style {
-                                                        size: Size::new(
-                                                            Val::Percent(100.0),
-                                                            Val::Percent(100.0),
-                                                        ),
+                                                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                                                         ..default()
                                                     },
                                                     image: UiImage {
                                                         texture: {
                                                             if i < inventory.items.len() {
                                                                 match inventory.items[i].item_type {
-                                                                    ItemType::Taffy => {
-                                                                        item_icons.taffy.clone()
-                                                                    }
-                                                                    ItemType::Nougat => {
-                                                                        item_icons.nougat.clone()
-                                                                    }
+                                                                    ItemType::Taffy => item_icons.taffy.clone(),
+                                                                    ItemType::Nougat => item_icons.nougat.clone(),
                                                                     ItemType::Marshmallow => {
-                                                                        item_icons
-                                                                            .marshmallow
-                                                                            .clone()
+                                                                        item_icons.marshmallow.clone()
                                                                     }
                                                                 }
                                                             } else {
@@ -256,19 +244,14 @@ fn draw_inventory(
                                                         flip_x: false,
                                                         flip_y: false,
                                                     },
-                                                    transform: Transform::from_scale(Vec3::splat(
-                                                        0.7,
-                                                    )),
+                                                    transform: Transform::from_scale(Vec3::splat(0.7)),
                                                     ..default()
                                                 });
                                                 // Quantity text
                                                 commands
                                                     .spawn(TextBundle {
                                                         style: Style {
-                                                            size: Size::new(
-                                                                Val::Percent(25.0),
-                                                                Val::Percent(30.0),
-                                                            ),
+                                                            size: Size::new(Val::Percent(25.0), Val::Percent(30.0)),
                                                             position_type: PositionType::Absolute,
                                                             position: UiRect::new(
                                                                 Val::Percent(5.0),
@@ -281,17 +264,14 @@ fn draw_inventory(
                                                         text: Text::from_section(
                                                             {
                                                                 if i < inventory.items.len() {
-                                                                    inventory.items[i]
-                                                                        .qty
-                                                                        .to_string()
+                                                                    inventory.items[i].qty.to_string()
                                                                 } else {
                                                                     "-".to_string()
                                                                 }
                                                             },
                                                             TextStyle {
                                                                 font: asset_server.load("font.otf"),
-                                                                font_size: physical_screen_height
-                                                                    / 108.0,
+                                                                font_size: physical_screen_height / 108.0,
                                                                 color: Color::WHITE,
                                                             },
                                                         ),
