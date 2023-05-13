@@ -15,9 +15,9 @@ impl Default for Inventory {
     fn default() -> Self {
         Self {
             items: [
-                Item::new_empty(ItemType::Taffy),
-                Item::new_empty(ItemType::Jellybeans),
-                Item::new_empty(ItemType::Swirlmallow),
+                Item::new(ItemType::Taffy, 20),
+                Item::new(ItemType::Nougat, 10),
+                Item::new(ItemType::Marshmallow, 5),
             ],
             balance: 100,
         }
@@ -80,6 +80,7 @@ fn draw_inventory(
     asset_server: Res<AssetServer>,
     buildings: Query<&Building>,
     primary_window: Query<&Window, With<PrimaryWindow>>,
+    item_icons: Res<ItemIcons>,
 ) {
     let mut city_centre_level = 0u8;
 
@@ -207,7 +208,7 @@ fn draw_inventory(
                                 })
                                 .insert(Name::new("Inventory grid container"))
                                 .with_children(|commands| {
-                                    for i in 1..=30 {
+                                    for i in 0..=29 {
                                         commands
                                             .spawn(ButtonBundle {
                                                 style: Style {
@@ -215,6 +216,7 @@ fn draw_inventory(
                                                         Val::Percent(100.0 / (5.0 / 0.9)),
                                                         Val::Percent(100.0 / (6.0 / 0.9)),
                                                     ),
+                                                    align_content: AlignContent::Center,
                                                     ..default()
                                                 },
                                                 background_color: Color::rgb(0.22, 0.25, 0.48)
@@ -222,6 +224,43 @@ fn draw_inventory(
                                                 ..default()
                                             })
                                             .with_children(|commands| {
+                                                // Item icon
+                                                commands.spawn(ImageBundle {
+                                                    style: Style {
+                                                        size: Size::new(
+                                                            Val::Percent(100.0),
+                                                            Val::Percent(100.0),
+                                                        ),
+                                                        ..default()
+                                                    },
+                                                    image: UiImage {
+                                                        texture: {
+                                                            if i < inventory.items.len() {
+                                                                match inventory.items[i].item_type {
+                                                                    ItemType::Taffy => {
+                                                                        item_icons.taffy.clone()
+                                                                    }
+                                                                    ItemType::Nougat => {
+                                                                        item_icons.nougat.clone()
+                                                                    }
+                                                                    ItemType::Marshmallow => {
+                                                                        item_icons
+                                                                            .marshmallow
+                                                                            .clone()
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                item_icons.empty.clone()
+                                                            }
+                                                        },
+                                                        flip_x: false,
+                                                        flip_y: false,
+                                                    },
+                                                    transform: Transform::from_scale(Vec3::splat(
+                                                        0.7,
+                                                    )),
+                                                    ..default()
+                                                });
                                                 // Quantity text
                                                 commands
                                                     .spawn(TextBundle {
@@ -230,6 +269,7 @@ fn draw_inventory(
                                                                 Val::Percent(25.0),
                                                                 Val::Percent(30.0),
                                                             ),
+                                                            position_type: PositionType::Absolute,
                                                             position: UiRect::new(
                                                                 Val::Percent(5.0),
                                                                 Val::Percent(0.0),
@@ -239,7 +279,15 @@ fn draw_inventory(
                                                             ..default()
                                                         },
                                                         text: Text::from_section(
-                                                            i.to_string(),
+                                                            {
+                                                                if i < inventory.items.len() {
+                                                                    inventory.items[i]
+                                                                        .qty
+                                                                        .to_string()
+                                                                } else {
+                                                                    "-".to_string()
+                                                                }
+                                                            },
                                                             TextStyle {
                                                                 font: asset_server.load("font.otf"),
                                                                 font_size: physical_screen_height
