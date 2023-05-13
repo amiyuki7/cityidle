@@ -1,5 +1,6 @@
 use crate::*;
 
+#[derive(Reflect, FromReflect, Copy, Clone, Debug)]
 pub enum ItemType {
     Taffy,
     Nougat,

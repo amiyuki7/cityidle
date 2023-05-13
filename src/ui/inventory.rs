@@ -31,7 +31,8 @@ impl Plugin for InventoryPlugin {
         app.init_resource::<Inventory>()
             .add_system(toggle_inventory)
             .add_system(draw_inventory.in_schedule(OnEnter(UiState::Inventory)))
-            .add_system(undraw_inventory.in_schedule(OnExit(UiState::Inventory)));
+            .add_system(undraw_inventory.in_schedule(OnExit(UiState::Inventory)))
+            .add_system(hovered_item_button.in_set(OnUpdate(UiState::Inventory)));
     }
 }
 
@@ -70,7 +71,9 @@ struct InventoryUIRoot;
 
 // Marker
 #[derive(Component, Reflect)]
-struct InventoryItemButton;
+struct InventoryItemButton {
+    item_type: Option<ItemType>,
+}
 
 fn draw_inventory(
     mut commands: Commands,
@@ -194,13 +197,14 @@ fn draw_inventory(
                             commands
                                 .spawn(NodeBundle {
                                     style: Style {
-                                        size: Size::new(Val::Percent(100.0), Val::Percent(80.0)),
+                                        size: Size::new(Val::Percent(80.0), Val::Percent(80.0)),
                                         flex_direction: FlexDirection::Row,
                                         // align_items: AlignItems::FlexEnd,
                                         justify_content: JustifyContent::SpaceAround,
                                         flex_wrap: FlexWrap::Wrap,
                                         ..default()
                                     },
+                                    focus_policy: bevy::ui::FocusPolicy::Block,
                                     background_color: Color::rgb(0.17, 0.19, 0.36).into(),
                                     ..default()
                                 })
@@ -214,11 +218,22 @@ fn draw_inventory(
                                                         Val::Percent(100.0 / (5.0 / 0.9)),
                                                         Val::Percent(100.0 / (6.0 / 0.9)),
                                                     ),
-                                                    align_content: AlignContent::Center,
+                                                    // align_content: AlignContent::Center,
+                                                    // align_self: AlignSelf::Center,
                                                     ..default()
                                                 },
                                                 background_color: Color::rgb(0.22, 0.25, 0.48).into(),
                                                 ..default()
+                                            })
+                                            .insert(Name::new(format!("Button {i}")))
+                                            .insert(InventoryItemButton {
+                                                item_type: {
+                                                    if i < inventory.items.len() {
+                                                        Some(inventory.items[i].item_type)
+                                                    } else {
+                                                        None
+                                                    }
+                                                },
                                             })
                                             .with_children(|commands| {
                                                 // Item icon
@@ -278,8 +293,7 @@ fn draw_inventory(
                                                         ..default()
                                                     })
                                                     .insert(Name::new("Quantity text"));
-                                            })
-                                            .insert(InventoryItemButton);
+                                            });
                                     }
                                 });
                         });
@@ -302,5 +316,18 @@ fn draw_inventory(
 fn undraw_inventory(mut commands: Commands, ui_root: Query<Entity, With<InventoryUIRoot>>) {
     for entity in ui_root.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+fn hovered_item_button(
+    mut interaction_query: Query<(&Interaction, &mut BackgroundColor, &InventoryItemButton), Changed<Interaction>>,
+) {
+    for (interaction, mut background_colour, item_button_cmp) in interaction_query.iter_mut() {
+        if matches!(interaction, Interaction::Hovered) {
+            *background_colour = Color::GREEN.into();
+            debug!("{:?}", item_button_cmp.item_type);
+        } else {
+            *background_colour = Color::rgb(0.22, 0.25, 0.48).into()
+        }
     }
 }
