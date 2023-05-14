@@ -75,7 +75,7 @@ fn setup(mut commands: Commands, mut primary_window: Query<&mut Window, With<Pri
 
     commands
         .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(80.0, 10.0, 80.0).looking_at(Vec3::new(70.0, 4.0, 70.0), Vec3::Y),
+            transform: Transform::from_xyz(95.0, 10.0, 70.0).looking_at(Vec3::new(70.0, 4.0, 60.0), Vec3::Y),
             ..default()
         })
         .insert(GameCamera);
@@ -105,6 +105,8 @@ fn keys_move_camera(
         let local_x = camera_transform.local_x();
         let right = Vec3::new(local_x.x, 0.0, local_x.z);
 
+        let initial_translation = camera_transform.translation;
+
         for key in keys.get_pressed() {
             if *key == keybinds.move_forward {
                 velocity -= backward;
@@ -130,6 +132,14 @@ fn keys_move_camera(
 
         // Normalize velocity vector so that going forward + right does not make you faster than going forward
         camera_transform.translation += velocity.normalize_or_zero() * time.delta_seconds() * settings.speed;
+
+        if !(0.0 < camera_transform.translation.x
+            && camera_transform.translation.x < 100.0
+            && 0.0 < camera_transform.translation.z
+            && camera_transform.translation.z < 100.0)
+        {
+            camera_transform.translation = initial_translation;
+        }
     }
 }
 
