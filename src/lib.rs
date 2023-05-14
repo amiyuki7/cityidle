@@ -43,12 +43,18 @@ impl Default for Keybinds {
 pub struct Models {
     pub city_centre_scene: Handle<Scene>,
     pub market_scene: Handle<Scene>,
+    pub construction_scene: Handle<Scene>,
+    pub candy_shop_scene: Handle<Scene>,
+    pub coffee_shop_scene: Handle<Scene>,
 }
 
 pub fn load_models(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Models {
         city_centre_scene: asset_server.load("bank_low_poly.glb#Scene0"),
         market_scene: asset_server.load("market.glb#Scene0"),
+        construction_scene: asset_server.load("crane.glb#Scene0"),
+        candy_shop_scene: asset_server.load("candy_shop.glb#Scene0"),
+        coffee_shop_scene: asset_server.load("coffee_shop.glb#Scene0"),
     });
 }
 

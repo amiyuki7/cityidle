@@ -11,6 +11,7 @@ pub struct GridPlugin;
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<SetupState>()
+            .add_state::<TileSelectionState>()
             .register_type::<SetupState>()
             .add_plugin(StateInspectorPlugin::<SetupState>::default())
             .register_type::<Tile>()
@@ -42,10 +43,13 @@ impl Tile {
     }
 }
 
-#[derive(Reflect, FromReflect, Debug, PartialEq)]
+#[derive(Reflect, FromReflect, Debug, PartialEq, Clone, Copy)]
 pub enum BuildingType {
     CityCentre,
     Market,
+    Construct,
+    CandyShop,
+    CoffeeShop,
 }
 
 impl BuildingType {
@@ -57,6 +61,11 @@ impl BuildingType {
                 Transform::from_scale(Vec3::new(0.5, 0.8, 0.8)).with_rotation(Quat::from_rotation_y(PI / 2.0))
             }
             Market => Transform::from_scale(Vec3::new(1.5, 0.7, 1.2)).with_rotation(Quat::from_rotation_y(PI)),
+            Construct => {
+                Transform::from_scale(Vec3::new(10.0, 7.0, 20.0)).with_rotation(Quat::from_rotation_y(PI / 2.0))
+            }
+            CandyShop => Transform::from_scale(Vec3::new(1.2, 1.0, 1.2)),
+            CoffeeShop => Transform::from_scale(Vec3::new(1.25, 1.0, 1.0)),
         }
     }
 }
@@ -77,15 +86,16 @@ pub fn spawn_grid(
     let texture = asset_server.load("tile_texture.png");
 
     let default_highlight = materials.add(StandardMaterial {
-        base_color_texture: Some(texture.clone()),
-        unlit: true,
+        base_color_texture: Some(texture),
+        // unlit: true,
         ..default()
     });
 
     let hover_highlight = materials.add(StandardMaterial {
-        base_color: Color::rgba(0.78, 0.0, 0.43, 0.8),
-        base_color_texture: Some(texture),
-        unlit: true,
+        // base_color: Color::rgba(0.78, 0.0, 0.43, 0.5),
+        base_color: Color::rgba(0.43, 0.28, 0.78, 0.5),
+        // base_color_texture: Some(texture),
+        // unlit: true,
         ..default()
     });
 
@@ -107,7 +117,12 @@ pub fn spawn_grid(
     next_setup_state.set(SetupState::SpawnTileDone);
 }
 
-// struct
+#[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default, Reflect)]
+pub enum TileSelectionState {
+    #[default]
+    Interact,
+    Build,
+}
 
 pub fn spawn_tile(
     commands: &mut Commands,
@@ -130,34 +145,47 @@ pub fn spawn_tile(
             },
             PickableBundle::default(),
             RaycastPickTarget::default(),
+            // TODO Transparent version of the building
+            OnPointer::<Over>::run_callback(|In(event): In<ListenedEvent<Over>>| Bubble::Up),
+            // TODO Delete transparent version
+            OnPointer::<Out>::run_callback(|In(event): In<ListenedEvent<Out>>| Bubble::Up),
             OnPointer::<Click>::run_callback(
                 // This is a big closure lol
                 |In(event): In<ListenedEvent<Click>>,
                  buildings: Query<(&Parent, &Building), With<Building>>,
                  mut next_ui_state: ResMut<NextState<UiState>>,
                  camera_state: Res<State<CameraState>>,
+                 tile_selection_state: Res<State<TileSelectionState>>,
                  mut previous_camera_state: ResMut<PreviousCameraState>,
                  mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>| {
-                    for (parent, building) in buildings.iter() {
-                        if parent.get() == event.target {
-                            // We have found the targetted building
-                            previous_camera_state.0 = Some(camera_state.0.clone());
-                            send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::Frozen));
+                    if tile_selection_state.0 == TileSelectionState::Interact {
+                        for (parent, building) in buildings.iter() {
+                            if parent.get() == event.target {
+                                // We have found the targetted building
+                                previous_camera_state.0 = Some(camera_state.0.clone());
+                                send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::Frozen));
 
-                            match building.building_type {
-                                BuildingType::CityCentre => {
-                                    //
-                                    next_ui_state.set(UiState::CityCentreInfo)
-                                }
-                                BuildingType::Market => {
-                                    //
-                                    next_ui_state.set(UiState::Market)
-                                }
-                                _ => {
-                                    next_ui_state.set(UiState::BuildingInfo);
+                                match building.building_type {
+                                    BuildingType::CityCentre => {
+                                        //
+                                        next_ui_state.set(UiState::CityCentreInfo)
+                                    }
+                                    BuildingType::Market => {
+                                        //
+                                        next_ui_state.set(UiState::Market)
+                                    }
+                                    BuildingType::Construct => {
+                                        //
+                                        next_ui_state.set(UiState::Construct)
+                                    }
+                                    _ => {
+                                        next_ui_state.set(UiState::BuildingInfo);
+                                    }
                                 }
                             }
                         }
+                    } else if tile_selection_state.0 == TileSelectionState::Build {
+                        // TODO
                     }
 
                     trace!("{:?}", event.target);
@@ -179,6 +207,8 @@ fn setup_buildings(
     mut tiles: Query<(Entity, &mut Tile)>,
     models: Res<Models>,
     mut next_setup_state: ResMut<NextState<SetupState>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for (tile_entity, mut tile) in tiles.iter_mut() {
         if tile.x == 70.0 && tile.z == 60.0 {
@@ -195,10 +225,6 @@ fn setup_buildings(
                 .id();
 
             commands.entity(tile_entity).add_child(building);
-            // tile.building = Some(Building {
-            //     building_type: BuildingType::CityCentre,
-            //     level: 1,
-            // });
         } else if tile.x == 70.0 && tile.z == 70.0 {
             let building = commands
                 .spawn(SceneBundle {
@@ -213,11 +239,45 @@ fn setup_buildings(
                 .id();
 
             commands.entity(tile_entity).add_child(building);
-            // tile.building = Some(Building {
-            //     building_type: BuildingType::Market,
-            //     level: 1,
-            // });
+        } else if tile.x == 80.0 && tile.z == 40.0 {
+            let building = commands
+                .spawn(SceneBundle {
+                    scene: models.construction_scene.clone(),
+                    transform: BuildingType::Construct.get_transform(),
+                    ..default()
+                })
+                .insert(Building {
+                    building_type: BuildingType::Construct,
+                    level: 1,
+                })
+                .id();
+
+            commands.entity(tile_entity).add_child(building);
         }
+
+        // else if tile.x == 80.0 && tile.z == 50.0 {
+        //     let sphere = commands
+        //         .spawn(PbrBundle {
+        //             mesh: meshes.add(
+        //                 Mesh::try_from(shape::Icosphere {
+        //                     radius: 2.5,
+        //                     subdivisions: 3,
+        //                 })
+        //                 .unwrap(),
+        //             ),
+        //             material: materials.add(StandardMaterial {
+        //                 base_color: Color::rgba(0.0, 0.0, 1.0, 0.25),
+        //                 alpha_mode: AlphaMode::Blend,
+        //                 unlit: true,
+        //                 ..default()
+        //             }),
+        //             transform: Transform::from_xyz(0.0, 3.0, 0.0),
+        //             ..default()
+        //         })
+        //         .id();
+        //
+        //     commands.entity(tile_entity).add_child(sphere);
+        // }
     }
 
     debug!("Finished setting up buildings");
