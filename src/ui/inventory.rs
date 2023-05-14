@@ -133,7 +133,7 @@ fn draw_inventory(
     let mut city_centre_level = 0u8;
 
     for building in buildings.iter() {
-        if building.building_type == BuildingType::Bank {
+        if building.building_type == BuildingType::CityCentre {
             city_centre_level = building.level;
             break;
         }

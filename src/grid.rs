@@ -42,7 +42,7 @@ impl Tile {
 
 #[derive(Reflect, FromReflect, Debug, PartialEq)]
 pub enum BuildingType {
-    Bank,
+    CityCentre,
 }
 
 #[derive(Component, Reflect, FromReflect, Debug)]
@@ -137,15 +137,15 @@ fn setup_buildings(
         if tile.x == 70.0 && tile.z == 60.0 {
             let building = commands
                 .spawn(SceneBundle {
-                    scene: models.bank_scene.clone(),
                     transform: Transform::from_scale(Vec3::splat(0.5)),
+                    scene: models.city_centre_scene.clone(),
                     ..default()
                 })
                 .id();
 
             commands.entity(tile_entity).add_child(building);
             tile.building = Some(Building {
-                building_type: BuildingType::Bank,
+                building_type: BuildingType::CityCentre,
                 level: 1,
             });
         }

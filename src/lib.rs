@@ -39,12 +39,12 @@ impl Default for Keybinds {
 
 #[derive(Resource, Default)]
 pub struct Models {
-    pub bank_scene: Handle<Scene>,
+    pub city_centre_scene: Handle<Scene>,
 }
 
 pub fn load_models(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Models {
-        bank_scene: asset_server.load("bank_low_poly.glb#Scene0"),
+        city_centre_scene: asset_server.load("bank_low_poly.glb#Scene0"),
     });
 }
 
