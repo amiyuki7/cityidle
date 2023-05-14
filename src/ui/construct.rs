@@ -549,7 +549,6 @@ fn buy_button_interaction(
     mut building_stash: ResMut<BuildingStash>,
     mut next_construct_state: ResMut<NextState<ConstructPhase>>,
     mut next_ui_state: ResMut<NextState<UiState>>,
-    previous_camera_state: Res<PreviousCameraState>,
     mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>,
 ) {
     for (interaction, mut background_colour) in interaction_query.iter_mut() {

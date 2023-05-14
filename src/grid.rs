@@ -116,6 +116,9 @@ pub fn spawn_grid(
     next_setup_state.set(SetupState::SpawnTileDone);
 }
 
+#[derive(Component)]
+struct ConstructPreviewSphere;
+
 pub fn spawn_tile(
     commands: &mut Commands,
     mesh: Handle<Mesh>,
@@ -131,16 +134,65 @@ pub fn spawn_tile(
         .spawn((
             PbrBundle {
                 mesh,
-                material: default_material,
+                material: default_material.clone(),
                 transform: Transform::from_xyz(x_pos, 0.0, z_pos),
                 ..default()
             },
             PickableBundle::default(),
             RaycastPickTarget::default(),
-            // TODO Transparent version of the building
-            OnPointer::<Over>::run_callback(|In(event): In<ListenedEvent<Over>>| Bubble::Up),
-            // TODO Delete transparent version
-            OnPointer::<Out>::run_callback(|In(event): In<ListenedEvent<Out>>| Bubble::Up),
+            // TODO: Transparent version of the building rather than a sphere
+            OnPointer::<Over>::run_callback(
+                |In(event): In<ListenedEvent<Over>>,
+                 construct_state: Res<State<ConstructPhase>>,
+                 mut callback_commands: Commands,
+                 mut meshes: ResMut<Assets<Mesh>>,
+                 mut materials: ResMut<Assets<StandardMaterial>>| {
+                    if construct_state.0 == ConstructPhase::Preview {
+                        // Spawn a transparent sphere indicator
+                        let sphere = callback_commands
+                            .spawn(PbrBundle {
+                                mesh: meshes.add(
+                                    Mesh::try_from(shape::Icosphere {
+                                        radius: 2.5,
+                                        subdivisions: 3,
+                                    })
+                                    .unwrap(),
+                                ),
+                                material: materials.add(StandardMaterial {
+                                    base_color: Color::rgba(0.0, 1.0, 0.0, 0.25),
+                                    alpha_mode: AlphaMode::Blend,
+                                    unlit: true,
+                                    ..default()
+                                }),
+                                transform: Transform::from_xyz(0.0, 2.5, 0.0),
+                                ..default()
+                            })
+                            .insert(ConstructPreviewSphere)
+                            .id();
+
+                        callback_commands.entity(event.target).add_child(sphere);
+                    }
+                    Bubble::Up
+                },
+            ),
+            // Find and delete transparent preview sphere
+            OnPointer::<Out>::run_callback(
+                |In(event): In<ListenedEvent<Out>>,
+                 construct_state: Res<State<ConstructPhase>>,
+                 mut callback_commands: Commands,
+                 preview_spheres: Query<(Entity, &Parent), With<ConstructPreviewSphere>>| {
+                    if construct_state.0 == ConstructPhase::Preview {
+                        for (sphere_entity, parent) in preview_spheres.iter() {
+                            debug!("Sphere: {:?}", sphere_entity);
+                            if parent.get() == event.target {
+                                callback_commands.entity(sphere_entity).despawn_recursive();
+                                break;
+                            }
+                        }
+                    }
+                    Bubble::Up
+                },
+            ),
             OnPointer::<Click>::run_callback(
                 // This is a big closure lol
                 |In(event): In<ListenedEvent<Click>>,
@@ -149,7 +201,12 @@ pub fn spawn_tile(
                  camera_state: Res<State<CameraState>>,
                  mut previous_camera_state: ResMut<PreviousCameraState>,
                  mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>,
-                 construct_state: Res<State<ConstructPhase>>| {
+                 construct_state: Res<State<ConstructPhase>>,
+                 mut next_construct_state: ResMut<NextState<ConstructPhase>>,
+                 mut callback_commands: Commands,
+                 preview_spheres: Query<(&Parent, Entity), With<ConstructPreviewSphere>>,
+                 mut building_stash: ResMut<BuildingStash>,
+                 models: Res<Models>| {
                     if construct_state.0 == ConstructPhase::Normal {
                         for (parent, building) in buildings.iter() {
                             if parent.get() == event.target {
@@ -174,10 +231,49 @@ pub fn spawn_tile(
                                         next_ui_state.set(UiState::BuildingInfo);
                                     }
                                 }
+
+                                break;
                             }
                         }
                     } else if construct_state.0 == ConstructPhase::Preview {
-                        // TODO
+                        // Check if the sphere is on a tile without a building
+                        let mut can_spawn_here = true;
+                        if let Some((sphere_parent, sphere_entity)) = preview_spheres.iter().next() {
+                            for (building_parent, _) in buildings.iter() {
+                                if sphere_parent.get() == event.target && building_parent.get() == event.target {
+                                    can_spawn_here = false;
+                                }
+                            }
+
+                            if can_spawn_here {
+                                if let Some(building_type) = building_stash.0 {
+                                    callback_commands.entity(sphere_entity).despawn_recursive();
+                                    // TODO refactor this into a generic spawn building fn
+                                    let building = callback_commands
+                                        .spawn(SceneBundle {
+                                            scene: match building_type {
+                                                BuildingType::CandyShop => models.candy_shop_scene.clone(),
+                                                BuildingType::CoffeeShop => models.coffee_shop_scene.clone(),
+                                                // This wildcard case will never happen
+                                                _ => models.city_centre_scene.clone(),
+                                            },
+                                            transform: building_type.get_transform(),
+                                            ..default()
+                                        })
+                                        .insert(Building {
+                                            building_type,
+                                            level: 1,
+                                        })
+                                        .id();
+
+                                    callback_commands.entity(event.target).add_child(building);
+                                }
+
+                                building_stash.0 = None;
+                                next_construct_state.set(ConstructPhase::Normal);
+                                send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::CursorLocked));
+                            }
+                        }
                     }
 
                     trace!("{:?}", event.target);
@@ -187,8 +283,8 @@ pub fn spawn_tile(
         ))
         .insert(Highlight {
             hovered: Some(HighlightKind::Fixed(hover_material.clone())),
-            pressed: Some(HighlightKind::Fixed(hover_material.clone())),
-            selected: Some(HighlightKind::Fixed(hover_material)),
+            pressed: Some(HighlightKind::Fixed(hover_material)),
+            selected: Some(HighlightKind::Fixed(default_material)),
         })
         .insert(Tile::new(x_pos, z_pos))
         .insert(Name::new(format!("Tile ({x_pos},{z_pos})")));
