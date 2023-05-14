@@ -40,8 +40,10 @@ fn main() {
         .add_plugin(GameCameraPlugin)
         .add_plugin(InventoryPlugin)
         .add_plugin(MarketPlugin)
+        .add_plugin(ConstructPlugin)
         .add_plugin(AutoSavePlugin)
         .init_resource::<Keybinds>()
+        .insert_resource(Msaa::default())
         .insert_resource(SelectionSettings {
             click_nothing_deselect_all: true,
             use_multiselect_default_inputs: false,

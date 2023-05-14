@@ -19,6 +19,9 @@ pub struct ItemIcons {
     pub coffee: Handle<Image>,
     pub cocoa: Handle<Image>,
     pub milkshake: Handle<Image>,
+
+    pub candy_shop: Handle<Image>,
+    pub coffee_shop: Handle<Image>,
 }
 
 pub fn load_item_icons(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -30,6 +33,9 @@ pub fn load_item_icons(mut commands: Commands, asset_server: Res<AssetServer>) {
         coffee: asset_server.load("items/coffee256.png"),
         cocoa: asset_server.load("items/cocoa256.png"),
         milkshake: asset_server.load("items/milkshake256.png"),
+
+        candy_shop: asset_server.load("items/candy_shop256.png"),
+        coffee_shop: asset_server.load("items/coffee_shop256.png"),
     })
 }
 

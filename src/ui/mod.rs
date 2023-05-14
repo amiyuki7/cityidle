@@ -1,7 +1,9 @@
+mod construct;
 mod inventory;
 mod items;
 mod market;
 pub use crate::*;
+pub use construct::*;
 pub use inventory::*;
 pub use items::*;
 pub use market::*;
@@ -12,6 +14,7 @@ pub enum UiState {
     BuildingInfo,
     CityCentreInfo,
     Market,
+    Construct,
     BuildingShop,
     #[default]
     None,
