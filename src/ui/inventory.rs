@@ -15,9 +15,9 @@ impl Default for Inventory {
     fn default() -> Self {
         Self {
             items: [
-                Item::new(ItemType::Taffy, 20),
-                Item::new(ItemType::Nougat, 10),
-                Item::new(ItemType::Marshmallow, 0),
+                Item::new(ItemType::Taffy, 26),
+                Item::new(ItemType::Nougat, 14),
+                Item::new(ItemType::Marshmallow, 3),
             ],
             balance: 100,
         }
@@ -41,6 +41,7 @@ impl Plugin for InventoryPlugin {
                     increment_button_interaction,
                     change_item_stats,
                     change_sell_quantity,
+                    sell_button_interaction,
                 )
                     .in_set(OnUpdate(UiState::Inventory)),
             );
@@ -80,6 +81,10 @@ pub fn toggle_inventory(
 #[derive(Component, Reflect)]
 struct InventoryUIRoot;
 
+// Marker
+#[derive(Component)]
+struct BalanceText;
+
 #[derive(Component, Reflect)]
 struct InventoryItemButton {
     item_type: Option<ItemType>,
@@ -103,7 +108,10 @@ struct ItemStatsSellPrice;
 
 // Marker
 #[derive(Component)]
-struct ItemStatsSellQuantity(u32);
+struct ItemStatsSellQuantity {
+    quantity: u32,
+    sell_allowed: bool,
+}
 
 // Marker
 #[derive(Component)]
@@ -140,7 +148,7 @@ fn draw_inventory(
         .insert(Name::new("InventoryUIRoot"))
         .insert(InventoryUIRoot)
         .with_children(|commands| {
-            // The inventory area
+            // The background
             commands
                 .spawn(NodeBundle {
                     style: Style {
@@ -206,6 +214,7 @@ fn draw_inventory(
                                             ),
                                             ..default()
                                         })
+                                        .insert(BalanceText)
                                         .insert(Name::new("Balance text"));
                                     // City centre text
                                     commands
@@ -519,7 +528,10 @@ fn draw_inventory(
                                             ),
                                             ..default()
                                         })
-                                        .insert(ItemStatsSellQuantity(0));
+                                        .insert(ItemStatsSellQuantity {
+                                            quantity: 0,
+                                            sell_allowed: true,
+                                        });
 
                                     spawn_quantity_increment_button(commands, &asset_server, 1, physical_screen_height);
 
@@ -572,7 +584,12 @@ fn draw_inventory(
         });
 }
 
-fn undraw_inventory(mut commands: Commands, ui_root: Query<Entity, With<InventoryUIRoot>>) {
+fn undraw_inventory(
+    mut commands: Commands,
+    ui_root: Query<Entity, With<InventoryUIRoot>>,
+    mut selected_item_stats: ResMut<SelectedItemStats>,
+) {
+    *selected_item_stats = SelectedItemStats::default();
     for entity in ui_root.iter() {
         commands.entity(entity).despawn_recursive();
     }
@@ -606,8 +623,6 @@ fn change_sell_quantity(
 ) {
     for event in increment_events.iter() {
         if let Ok((mut text, mut sell_quantity)) = sell_quantity_query.get_single_mut() {
-            let sq = &mut sell_quantity.0;
-
             let IncrementEvent(amount) = *event;
             let SelectedItemStats {
                 item_type,
@@ -616,25 +631,81 @@ fn change_sell_quantity(
             } = *selected_item_stats;
 
             if amount.is_positive() {
-                *sq += amount as u32;
+                sell_quantity.quantity += amount as u32;
             } else {
                 // Negative value - decrement
                 let abs_decrement = amount.unsigned_abs() as u32;
-                if abs_decrement <= *sq {
-                    *sq -= abs_decrement;
+                if abs_decrement <= sell_quantity.quantity {
+                    sell_quantity.quantity -= abs_decrement;
                 } else {
                     // Subtracting too much sets it to 0, e.g. subtracting 10 from 7
-                    *sq = 0;
+                    sell_quantity.quantity = 0;
                 }
             }
 
-            text.sections[0].value = sq.to_string();
+            text.sections[0].value = sell_quantity.quantity.to_string();
 
-            if *sq <= quantity {
+            if sell_quantity.quantity <= quantity {
                 text.sections[0].style.color = Color::GREEN;
+                sell_quantity.sell_allowed = true;
             } else {
                 text.sections[0].style.color = Color::RED;
+                sell_quantity.sell_allowed = false;
             }
+        }
+    }
+}
+
+#[allow(clippy::complexity)]
+fn sell_button_interaction(
+    mut interaction_query: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<SellButton>)>,
+    // mut sell_quantity_query: Query<(&mut Text, &mut ItemStatsSellQuantity)>,
+    mut selected_item_stats: ResMut<SelectedItemStats>,
+    mut inventory: ResMut<Inventory>,
+    mut param_set: ParamSet<(
+        Query<(&mut Text, &mut ItemStatsSellQuantity)>,
+        Query<&mut Text, With<ItemStatsQuantity>>,
+        Query<&mut Text, With<BalanceText>>,
+    )>,
+) {
+    for (interaction, mut background_colour) in interaction_query.iter_mut() {
+        match interaction {
+            Interaction::Clicked => 'onclick: {
+                if let Ok((mut text, mut sell_quantity)) = param_set.p0().get_single_mut() {
+                    if !sell_quantity.sell_allowed || sell_quantity.quantity == 0 {
+                        break 'onclick;
+                    }
+                    // Inventory: add to balance, subtract from items
+                    inventory.balance += selected_item_stats.sell_price * sell_quantity.quantity;
+                    let item = inventory
+                        .items
+                        .iter_mut()
+                        .find(|item| item.item_type == selected_item_stats.item_type.unwrap())
+                        .unwrap();
+
+                    item.quantity -= sell_quantity.quantity;
+                    selected_item_stats.quantity = item.quantity;
+                    // if let Some(item) = target_item {
+                    //     item.quantity -= sell_quantity.quantity;
+                    // }
+
+                    // Reset quantiy select text & state
+                    sell_quantity.quantity = 0;
+                    sell_quantity.sell_allowed = true;
+                    text.sections[0].value = "0".to_string();
+                    text.sections[0].style.color = Color::GREEN;
+                    // Reset quantity text
+                    if let Ok(mut quantity_text) = param_set.p1().get_single_mut() {
+                        quantity_text.sections[0].value = format!("Quantity: {}", item.quantity);
+                    }
+                    // Update balance text
+                    if let Ok(mut balance_text) = param_set.p2().get_single_mut() {
+                        balance_text.sections[0].value = format!("Balance: ${}", inventory.balance);
+                    }
+                }
+            }
+            Interaction::Hovered => *background_colour = Color::rgb(0.34, 0.37, 0.60).into(),
+            _ => *background_colour = Color::rgb(0.22, 0.25, 0.48).into(),
         }
     }
 }
@@ -721,7 +792,8 @@ fn change_item_stats(
 
         // Reset sell quantity text
         if let Ok((mut text, mut sell_quantity)) = param_set.p3().get_single_mut() {
-            sell_quantity.0 = 0;
+            sell_quantity.quantity = 0;
+            sell_quantity.sell_allowed = true;
             text.sections[0].value = "0".to_string();
             text.sections[0].style.color = Color::GREEN;
         }
