@@ -30,14 +30,15 @@ pub enum SetupState {
 
 #[derive(Component, Reflect, Debug)]
 pub struct Tile {
-    pub building: Option<Building>,
+    // pub building: Option<Building>,
     pub x: f32,
     pub z: f32,
 }
 
 impl Tile {
     fn new(x: f32, z: f32) -> Self {
-        Self { building: None, x, z }
+        // Self { building: None, x, z }
+        Self { x, z }
     }
 }
 
@@ -47,7 +48,20 @@ pub enum BuildingType {
     Market,
 }
 
-#[derive(Component, Reflect, FromReflect, Debug)]
+impl BuildingType {
+    pub fn get_transform(&self) -> Transform {
+        use BuildingType::*;
+
+        match self {
+            CityCentre => {
+                Transform::from_scale(Vec3::new(0.5, 0.8, 0.8)).with_rotation(Quat::from_rotation_y(PI / 2.0))
+            }
+            Market => Transform::from_scale(Vec3::new(1.5, 0.7, 1.2)).with_rotation(Quat::from_rotation_y(PI)),
+        }
+    }
+}
+
+#[derive(Component, Reflect, FromReflect, Debug, PartialEq)]
 pub struct Building {
     pub building_type: BuildingType,
     pub level: u8,
@@ -93,6 +107,8 @@ pub fn spawn_grid(
     next_setup_state.set(SetupState::SpawnTileDone);
 }
 
+// struct
+
 pub fn spawn_tile(
     commands: &mut Commands,
     mesh: Handle<Mesh>,
@@ -114,11 +130,40 @@ pub fn spawn_tile(
             },
             PickableBundle::default(),
             RaycastPickTarget::default(),
-            OnPointer::<Click>::target_component_mut::<Tile>(|click, tile| {
-                if click.button == PointerButton::Primary {
-                    trace!("{tile:?}");
-                }
-            }),
+            OnPointer::<Click>::run_callback(
+                // This is a big closure lol
+                |In(event): In<ListenedEvent<Click>>,
+                 buildings: Query<(&Parent, &Building), With<Building>>,
+                 mut next_ui_state: ResMut<NextState<UiState>>,
+                 camera_state: Res<State<CameraState>>,
+                 mut previous_camera_state: ResMut<PreviousCameraState>,
+                 mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>| {
+                    for (parent, building) in buildings.iter() {
+                        if parent.get() == event.target {
+                            // We have found the targetted building
+                            previous_camera_state.0 = Some(camera_state.0.clone());
+                            send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::Frozen));
+
+                            match building.building_type {
+                                BuildingType::CityCentre => {
+                                    //
+                                    next_ui_state.set(UiState::CityCentreInfo)
+                                }
+                                BuildingType::Market => {
+                                    //
+                                    next_ui_state.set(UiState::Market)
+                                }
+                                _ => {
+                                    next_ui_state.set(UiState::BuildingInfo);
+                                }
+                            }
+                        }
+                    }
+
+                    trace!("{:?}", event.target);
+                    Bubble::Up
+                },
+            ),
         ))
         .insert(Highlight {
             hovered: Some(HighlightKind::Fixed(hover_material.clone())),
@@ -137,37 +182,41 @@ fn setup_buildings(
 ) {
     for (tile_entity, mut tile) in tiles.iter_mut() {
         if tile.x == 70.0 && tile.z == 60.0 {
-            let mut building_transform = Transform::from_scale(Vec3::new(0.5, 0.8, 0.8));
-            building_transform.rotate_y(PI / 2.0);
             let building = commands
                 .spawn(SceneBundle {
                     scene: models.city_centre_scene.clone(),
-                    transform: building_transform,
+                    transform: BuildingType::CityCentre.get_transform(),
                     ..default()
+                })
+                .insert(Building {
+                    building_type: BuildingType::CityCentre,
+                    level: 1,
                 })
                 .id();
 
             commands.entity(tile_entity).add_child(building);
-            tile.building = Some(Building {
-                building_type: BuildingType::CityCentre,
-                level: 1,
-            });
+            // tile.building = Some(Building {
+            //     building_type: BuildingType::CityCentre,
+            //     level: 1,
+            // });
         } else if tile.x == 70.0 && tile.z == 70.0 {
-            let mut building_transform = Transform::from_scale(Vec3::new(1.5, 0.7, 1.2));
-            building_transform.rotate_y(PI);
             let building = commands
                 .spawn(SceneBundle {
                     scene: models.market_scene.clone(),
-                    transform: building_transform,
+                    transform: BuildingType::Market.get_transform(),
                     ..default()
+                })
+                .insert(Building {
+                    building_type: BuildingType::Market,
+                    level: 1,
                 })
                 .id();
 
             commands.entity(tile_entity).add_child(building);
-            tile.building = Some(Building {
-                building_type: BuildingType::Market,
-                level: 1,
-            });
+            // tile.building = Some(Building {
+            //     building_type: BuildingType::Market,
+            //     level: 1,
+            // });
         }
     }
 
