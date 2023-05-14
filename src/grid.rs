@@ -1,5 +1,6 @@
 use bevy_inspector_egui::quick::StateInspectorPlugin;
 use bevy_mod_picking::prelude::*;
+use std::f32::consts::PI;
 
 use crate::*;
 
@@ -43,6 +44,7 @@ impl Tile {
 #[derive(Reflect, FromReflect, Debug, PartialEq)]
 pub enum BuildingType {
     CityCentre,
+    Market,
 }
 
 #[derive(Component, Reflect, FromReflect, Debug)]
@@ -135,10 +137,12 @@ fn setup_buildings(
 ) {
     for (tile_entity, mut tile) in tiles.iter_mut() {
         if tile.x == 70.0 && tile.z == 60.0 {
+            let mut building_transform = Transform::from_scale(Vec3::new(0.5, 0.8, 0.8));
+            building_transform.rotate_y(PI / 2.0);
             let building = commands
                 .spawn(SceneBundle {
-                    transform: Transform::from_scale(Vec3::splat(0.5)),
                     scene: models.city_centre_scene.clone(),
+                    transform: building_transform,
                     ..default()
                 })
                 .id();
@@ -146,6 +150,22 @@ fn setup_buildings(
             commands.entity(tile_entity).add_child(building);
             tile.building = Some(Building {
                 building_type: BuildingType::CityCentre,
+                level: 1,
+            });
+        } else if tile.x == 70.0 && tile.z == 70.0 {
+            let mut building_transform = Transform::from_scale(Vec3::new(1.5, 0.7, 1.2));
+            building_transform.rotate_y(PI);
+            let building = commands
+                .spawn(SceneBundle {
+                    scene: models.market_scene.clone(),
+                    transform: building_transform,
+                    ..default()
+                })
+                .id();
+
+            commands.entity(tile_entity).add_child(building);
+            tile.building = Some(Building {
+                building_type: BuildingType::Market,
                 level: 1,
             });
         }
