@@ -75,7 +75,7 @@ fn setup(mut commands: Commands, mut primary_window: Query<&mut Window, With<Pri
 
     commands
         .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(95.0, 10.0, 70.0).looking_at(Vec3::new(70.0, 4.0, 60.0), Vec3::Y),
+            transform: Transform::from_xyz(98.0, 10.0, 70.0).looking_at(Vec3::new(70.0, 4.0, 50.0), Vec3::Y),
             ..default()
         })
         .insert(GameCamera);
