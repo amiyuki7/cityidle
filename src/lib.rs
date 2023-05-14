@@ -59,3 +59,38 @@ pub fn set_cursor_lock(window: &mut Window, lock: bool) {
         window.cursor.visible = true;
     }
 }
+
+pub struct AutoSavePlugin;
+
+impl Plugin for AutoSavePlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<AutoSaver>().add_system(auto_save);
+    }
+}
+
+// TODO: Hook this up to a serializer and save to file
+#[derive(Resource)]
+pub struct AutoSaver {
+    save_timer: Timer,
+}
+
+impl Default for AutoSaver {
+    fn default() -> Self {
+        Self {
+            save_timer: Timer::from_seconds(5.0, TimerMode::Repeating),
+        }
+    }
+}
+
+pub fn auto_save(
+    time: Res<Time>,
+    mut autosaver: ResMut<AutoSaver>,
+    inventory: Res<Inventory>,
+    buildings: Query<&Building>,
+) {
+    autosaver.save_timer.tick(time.delta());
+
+    if autosaver.save_timer.just_finished() {
+        debug!("Should be autosaving now");
+    }
+}
