@@ -7,8 +7,8 @@ use super::UiState;
 #[derive(Resource)]
 pub struct Inventory {
     // items: [Item; 30],
-    items: [Item; 3],
-    balance: u32,
+    pub items: [Item; 6],
+    pub balance: u32,
 }
 
 impl Default for Inventory {
@@ -18,6 +18,9 @@ impl Default for Inventory {
                 Item::new(ItemType::Taffy, 26),
                 Item::new(ItemType::Nougat, 14),
                 Item::new(ItemType::Marshmallow, 3),
+                Item::new(ItemType::Coffee, 0),
+                Item::new(ItemType::Cocoa, 0),
+                Item::new(ItemType::Milkshake, 0),
             ],
             balance: 100,
         }
@@ -57,6 +60,7 @@ pub fn toggle_inventory(
     ui_state: Res<State<UiState>>,
     mut next_ui_state: ResMut<NextState<UiState>>,
 ) {
+    // TODO: Make [ESC] key work here as well
     if !keys.just_pressed(keybinds.toggle_inventory) {
         return;
     }
@@ -302,6 +306,9 @@ fn draw_inventory(
                                                                     ItemType::Marshmallow => {
                                                                         item_icons.marshmallow.clone()
                                                                     }
+                                                                    ItemType::Coffee => item_icons.coffee.clone(),
+                                                                    ItemType::Cocoa => item_icons.cocoa.clone(),
+                                                                    ItemType::Milkshake => item_icons.milkshake.clone(),
                                                                 }
                                                             } else {
                                                                 item_icons.empty.clone()
@@ -544,7 +551,7 @@ fn draw_inventory(
                                         })
                                         .insert(ItemStatsSellQuantity {
                                             quantity: 0,
-                                            sell_allowed: true,
+                                            sell_allowed: false,
                                         });
 
                                     spawn_quantity_increment_button(commands, &asset_server, 1, physical_screen_height);
@@ -654,7 +661,7 @@ fn change_sell_quantity(
 
             text.sections[0].value = sell_quantity.quantity.to_string();
 
-            if sell_quantity.quantity <= selected_item_stats.quantity {
+            if sell_quantity.quantity <= selected_item_stats.quantity && sell_quantity.quantity != 0 {
                 text.sections[0].style.color = Color::GREEN;
                 sell_quantity.sell_allowed = true;
             } else {
@@ -771,6 +778,9 @@ fn item_button_interaction(
                             ItemType::Taffy => item_icons.taffy.clone(),
                             ItemType::Nougat => item_icons.nougat.clone(),
                             ItemType::Marshmallow => item_icons.marshmallow.clone(),
+                            ItemType::Coffee => item_icons.coffee.clone(),
+                            ItemType::Cocoa => item_icons.cocoa.clone(),
+                            ItemType::Milkshake => item_icons.milkshake.clone(),
                         },
                         quantity: target_item.quantity,
                         sell_price: target_item.sell_price,
@@ -819,7 +829,7 @@ fn change_item_stats(
 }
 
 #[derive(Component)]
-pub struct IncrementButton(i8);
+struct IncrementButton(i8);
 
 fn spawn_quantity_increment_button(
     commands: &mut ChildBuilder,
