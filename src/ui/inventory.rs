@@ -85,6 +85,11 @@ struct InventoryUIRoot;
 #[derive(Component)]
 struct BalanceText;
 
+#[derive(Component)]
+struct MiniQuantityText {
+    item_type: Option<ItemType>,
+}
+
 #[derive(Component, Reflect)]
 struct InventoryItemButton {
     item_type: Option<ItemType>,
@@ -337,6 +342,15 @@ fn draw_inventory(
                                                             },
                                                         ),
                                                         ..default()
+                                                    })
+                                                    .insert(MiniQuantityText {
+                                                        item_type: {
+                                                            if i < inventory.items.len() {
+                                                                Some(inventory.items[i].item_type)
+                                                            } else {
+                                                                None
+                                                            }
+                                                        },
                                                     })
                                                     .insert(Name::new("Quantity text"));
                                             });
@@ -624,11 +638,6 @@ fn change_sell_quantity(
     for event in increment_events.iter() {
         if let Ok((mut text, mut sell_quantity)) = sell_quantity_query.get_single_mut() {
             let IncrementEvent(amount) = *event;
-            let SelectedItemStats {
-                item_type,
-                quantity,
-                sell_price,
-            } = *selected_item_stats;
 
             if amount.is_positive() {
                 sell_quantity.quantity += amount as u32;
@@ -645,7 +654,7 @@ fn change_sell_quantity(
 
             text.sections[0].value = sell_quantity.quantity.to_string();
 
-            if sell_quantity.quantity <= quantity {
+            if sell_quantity.quantity <= selected_item_stats.quantity {
                 text.sections[0].style.color = Color::GREEN;
                 sell_quantity.sell_allowed = true;
             } else {
@@ -659,13 +668,13 @@ fn change_sell_quantity(
 #[allow(clippy::complexity)]
 fn sell_button_interaction(
     mut interaction_query: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<SellButton>)>,
-    // mut sell_quantity_query: Query<(&mut Text, &mut ItemStatsSellQuantity)>,
     mut selected_item_stats: ResMut<SelectedItemStats>,
     mut inventory: ResMut<Inventory>,
     mut param_set: ParamSet<(
         Query<(&mut Text, &mut ItemStatsSellQuantity)>,
         Query<&mut Text, With<ItemStatsQuantity>>,
         Query<&mut Text, With<BalanceText>>,
+        Query<(&mut Text, &MiniQuantityText)>,
     )>,
 ) {
     for (interaction, mut background_colour) in interaction_query.iter_mut() {
@@ -677,6 +686,8 @@ fn sell_button_interaction(
                     }
                     // Inventory: add to balance, subtract from items
                     inventory.balance += selected_item_stats.sell_price * sell_quantity.quantity;
+                    let balance = inventory.balance;
+
                     let item = inventory
                         .items
                         .iter_mut()
@@ -685,22 +696,29 @@ fn sell_button_interaction(
 
                     item.quantity -= sell_quantity.quantity;
                     selected_item_stats.quantity = item.quantity;
-                    // if let Some(item) = target_item {
-                    //     item.quantity -= sell_quantity.quantity;
-                    // }
 
                     // Reset quantiy select text & state
                     sell_quantity.quantity = 0;
                     sell_quantity.sell_allowed = true;
                     text.sections[0].value = "0".to_string();
                     text.sections[0].style.color = Color::GREEN;
+
                     // Reset quantity text
                     if let Ok(mut quantity_text) = param_set.p1().get_single_mut() {
                         quantity_text.sections[0].value = format!("Quantity: {}", item.quantity);
                     }
+
                     // Update balance text
                     if let Ok(mut balance_text) = param_set.p2().get_single_mut() {
-                        balance_text.sections[0].value = format!("Balance: ${}", inventory.balance);
+                        balance_text.sections[0].value = format!("Balance: ${}", balance);
+                    }
+
+                    // Update mini quantity text
+                    for (mut text, MiniQuantityText { item_type }) in param_set.p3().iter_mut() {
+                        if *item_type == selected_item_stats.item_type {
+                            text.sections[0].value = item.quantity.to_string();
+                            break;
+                        }
                     }
                 }
             }
