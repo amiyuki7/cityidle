@@ -20,6 +20,7 @@ pub struct Keybinds {
     pub move_down: KeyCode,
     pub toggle_mouse_lock: KeyCode,
     pub toggle_inventory: KeyCode,
+    pub exit_uistate: KeyCode,
 }
 
 impl Default for Keybinds {
@@ -33,6 +34,7 @@ impl Default for Keybinds {
             move_down: KeyCode::LShift,
             toggle_mouse_lock: KeyCode::F,
             toggle_inventory: KeyCode::E,
+            exit_uistate: KeyCode::Escape,
         }
     }
 }
