@@ -51,6 +51,7 @@ impl Plugin for InventoryPlugin {
     }
 }
 
+#[allow(clippy::complexity)]
 pub fn toggle_inventory(
     keybinds: Res<Keybinds>,
     keys: Res<Input<KeyCode>>,
@@ -59,7 +60,12 @@ pub fn toggle_inventory(
     mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>,
     ui_state: Res<State<UiState>>,
     mut next_ui_state: ResMut<NextState<UiState>>,
+    construct_state: Res<State<ConstructPhase>>,
 ) {
+    if construct_state.0 == ConstructPhase::Preview {
+        return;
+    }
+
     // TODO: Make [ESC] key work here as well
     if !keys.just_pressed(keybinds.toggle_inventory) {
         return;

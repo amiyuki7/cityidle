@@ -48,8 +48,9 @@ impl Plugin for GameCameraPlugin {
 pub enum CameraState {
     #[default]
     CursorLocked, // Cursor is locked - camera is free to move
-    CursorUnlocked, // Cursor is unlocked - camera is stationary
-    Frozen,         // Everything is disabled - set to this state when using inventory, shop, etc
+    CursorUnlocked,   // Cursor is unlocked - camera is stationary
+    Frozen,           // Everything is disabled - set to this state when using inventory, shop, etc
+    ConstructPreview, // Camera movement AND cursor are both enabled
 }
 
 #[derive(Resource, Default)]
@@ -175,7 +176,12 @@ fn toggle_camera_state(
     keybinds: Res<Keybinds>,
     mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>,
     camera_state: Res<State<CameraState>>,
+    construct_state: Res<State<ConstructPhase>>,
 ) {
+    if construct_state.0 == ConstructPhase::Preview {
+        return;
+    }
+
     if keys.just_pressed(keybinds.toggle_mouse_lock) {
         // send_change_camera_state_event.send(ChangeCameraStateEvent(()))
         if camera_state.0 == CameraState::CursorLocked {
@@ -230,6 +236,17 @@ fn on_change_camera_state(
             }
 
             next_camera_state.set(CameraState::Frozen);
+            set_cursor_lock(&mut window, false);
+        }
+        // Only for the use case of constructing a building
+        else if event.0 == CameraState::ConstructPreview {
+            if raycast_camera.is_err() {
+                commands
+                    .entity(*camera.as_ref().unwrap())
+                    .insert(RaycastPickCamera::default());
+            }
+
+            next_camera_state.set(CameraState::CursorLocked);
             set_cursor_lock(&mut window, false);
         }
     }

@@ -21,7 +21,7 @@ impl BuildingItem {
     fn get_price(building_type: BuildingType) -> u32 {
         use BuildingType::*;
         match building_type {
-            CandyShop => 1000,
+            CandyShop => 100,
             CoffeeShop => 3400,
             _ => 0,
         }
@@ -61,19 +61,27 @@ impl Plugin for ConstructPlugin {
         app.add_state::<ConstructPhase>()
             .init_resource::<ConstructInventory>()
             .init_resource::<SelectedItemStats>()
+            .init_resource::<BuildingStash>()
             .add_event::<ChangeItemStatsEvent>()
             .add_system(draw_construct.in_schedule(OnEnter(UiState::Construct)))
             .add_system(undraw_construct.in_schedule(OnExit(UiState::Construct)))
+            .add_system(undraw_construct.in_schedule(OnEnter(ConstructPhase::Preview)))
             .add_systems(
-                (exit_uistate, item_button_interaction, change_item_stats).in_set(OnUpdate(UiState::Construct)),
+                (
+                    exit_uistate,
+                    item_button_interaction,
+                    change_item_stats,
+                    buy_button_interaction,
+                )
+                    .in_set(OnUpdate(ConstructPhase::Normal)),
             );
     }
 }
 
 #[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default, Reflect)]
-enum ConstructPhase {
+pub enum ConstructPhase {
     #[default]
-    InShop,
+    Normal,
     Preview,
 }
 
@@ -106,9 +114,7 @@ struct ConstructItemButton {
 }
 
 #[derive(Component)]
-struct MiniQuantityText {
-    building_type: Option<BuildingType>,
-}
+struct MiniQuantityText;
 
 #[derive(Component)]
 struct ItemStatsName;
@@ -337,15 +343,7 @@ fn draw_construct(
                                                         ),
                                                         ..default()
                                                     })
-                                                    .insert(MiniQuantityText {
-                                                        building_type: {
-                                                            if i < construct_inventory.items.len() {
-                                                                Some(construct_inventory.items[i].building_type)
-                                                            } else {
-                                                                None
-                                                            }
-                                                        },
-                                                    })
+                                                    .insert(MiniQuantityText)
                                                     .insert(Name::new("Quantity text"));
                                             });
                                     }
@@ -531,11 +529,54 @@ fn draw_construct(
 fn undraw_construct(
     mut commands: Commands,
     ui_root: Query<Entity, With<ConstructUIRoot>>,
-    // mut selected_item_stats: ResMut<SelectedItemStats>,
+    mut selected_item_stats: ResMut<SelectedItemStats>,
 ) {
-    // *selected_item_stats = SelectedItemStats::default();
+    *selected_item_stats = SelectedItemStats::default();
     for entity in ui_root.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct BuildingStash(pub Option<BuildingType>);
+
+#[allow(clippy::complexity)]
+fn buy_button_interaction(
+    mut interaction_query: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<BuyButton>)>,
+    selected_item_stats: ResMut<SelectedItemStats>,
+    mut inventory: ResMut<Inventory>,
+    mut construct_inventory: ResMut<ConstructInventory>,
+    mut building_stash: ResMut<BuildingStash>,
+    mut next_construct_state: ResMut<NextState<ConstructPhase>>,
+    mut next_ui_state: ResMut<NextState<UiState>>,
+    previous_camera_state: Res<PreviousCameraState>,
+    mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>,
+) {
+    for (interaction, mut background_colour) in interaction_query.iter_mut() {
+        match interaction {
+            Interaction::Clicked => {
+                if inventory.balance >= selected_item_stats.buy_price {
+                    // Buy it
+                    let item = construct_inventory
+                        .items
+                        .iter_mut()
+                        .find(|item| item.building_type == selected_item_stats.building_type.unwrap())
+                        .unwrap();
+
+                    if item.quantity > 0 {
+                        item.quantity -= 1;
+                        inventory.balance -= item.price;
+
+                        building_stash.0 = Some(item.building_type);
+                        next_construct_state.set(ConstructPhase::Preview);
+                        next_ui_state.set(UiState::None);
+                        send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::ConstructPreview));
+                    }
+                }
+            }
+            Interaction::Hovered => *background_colour = Color::rgb(0.34, 0.37, 0.60).into(),
+            _ => *background_colour = Color::rgb(0.22, 0.25, 0.48).into(),
+        }
     }
 }
 

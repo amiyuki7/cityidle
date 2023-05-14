@@ -11,7 +11,6 @@ pub struct GridPlugin;
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<SetupState>()
-            .add_state::<TileSelectionState>()
             .register_type::<SetupState>()
             .add_plugin(StateInspectorPlugin::<SetupState>::default())
             .register_type::<Tile>()
@@ -117,13 +116,6 @@ pub fn spawn_grid(
     next_setup_state.set(SetupState::SpawnTileDone);
 }
 
-#[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default, Reflect)]
-pub enum TileSelectionState {
-    #[default]
-    Interact,
-    Build,
-}
-
 pub fn spawn_tile(
     commands: &mut Commands,
     mesh: Handle<Mesh>,
@@ -155,10 +147,10 @@ pub fn spawn_tile(
                  buildings: Query<(&Parent, &Building), With<Building>>,
                  mut next_ui_state: ResMut<NextState<UiState>>,
                  camera_state: Res<State<CameraState>>,
-                 tile_selection_state: Res<State<TileSelectionState>>,
                  mut previous_camera_state: ResMut<PreviousCameraState>,
-                 mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>| {
-                    if tile_selection_state.0 == TileSelectionState::Interact {
+                 mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>,
+                 construct_state: Res<State<ConstructPhase>>| {
+                    if construct_state.0 == ConstructPhase::Normal {
                         for (parent, building) in buildings.iter() {
                             if parent.get() == event.target {
                                 // We have found the targetted building
@@ -184,7 +176,7 @@ pub fn spawn_tile(
                                 }
                             }
                         }
-                    } else if tile_selection_state.0 == TileSelectionState::Build {
+                    } else if construct_state.0 == ConstructPhase::Preview {
                         // TODO
                     }
 
