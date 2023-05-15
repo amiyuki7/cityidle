@@ -8,6 +8,9 @@ pub enum ItemType {
     Coffee,
     Cocoa,
     Milkshake,
+    Apple,
+    Branch,
+    Honey,
 }
 
 #[derive(Resource)]
@@ -19,23 +22,33 @@ pub struct ItemIcons {
     pub coffee: Handle<Image>,
     pub cocoa: Handle<Image>,
     pub milkshake: Handle<Image>,
+    pub apple: Handle<Image>,
+    pub branch: Handle<Image>,
+    pub honey: Handle<Image>,
 
     pub candy_shop: Handle<Image>,
     pub coffee_shop: Handle<Image>,
+    pub tree: Handle<Image>,
+    pub factory: Handle<Image>,
 }
 
 pub fn load_item_icons(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(ItemIcons {
-        empty: asset_server.load("items/empty256.png"),
-        taffy: asset_server.load("items/taffy256.png"),
-        nougat: asset_server.load("items/nougat256.png"),
-        marshmallow: asset_server.load("items/marshmallow256.png"),
-        coffee: asset_server.load("items/coffee256.png"),
-        cocoa: asset_server.load("items/cocoa256.png"),
-        milkshake: asset_server.load("items/milkshake256.png"),
+        empty: asset_server.load("icons/items/empty256.png"),
+        taffy: asset_server.load("icons/items/taffy256.png"),
+        nougat: asset_server.load("icons/items/nougat256.png"),
+        marshmallow: asset_server.load("icons/items/marshmallow256.png"),
+        coffee: asset_server.load("icons/items/coffee256.png"),
+        cocoa: asset_server.load("icons/items/cocoa256.png"),
+        milkshake: asset_server.load("icons/items/milkshake256.png"),
+        apple: asset_server.load("icons/items/apple256.png"),
+        branch: asset_server.load("icons/items/branch256.png"),
+        honey: asset_server.load("icons/items/honey256.png"),
 
-        candy_shop: asset_server.load("items/candy_shop256.png"),
-        coffee_shop: asset_server.load("items/coffee_shop256.png"),
+        candy_shop: asset_server.load("icons/buildings/candy_shop256.png"),
+        coffee_shop: asset_server.load("icons/buildings/coffee_shop256.png"),
+        tree: asset_server.load("icons/buildings/tree256.png"),
+        factory: asset_server.load("icons/buildings/factory256.png"),
     })
 }
 
@@ -67,6 +80,9 @@ impl Item {
             Coffee => "Coffee",
             Cocoa => "Cocoa",
             Milkshake => "Milkshake",
+            Apple => "Apple",
+            Branch => "Branch",
+            Honey => "Honey",
         }
         .to_string()
     }
@@ -77,9 +93,14 @@ impl Item {
             Taffy => 5,
             Nougat => 12,
             Marshmallow => 26,
+
             Coffee => 8,
             Cocoa => 15,
             Milkshake => 35,
+
+            Apple => 18,
+            Branch => 30,
+            Honey => 56,
         }
     }
 
@@ -89,9 +110,14 @@ impl Item {
             Taffy => 6,
             Nougat => 14,
             Marshmallow => 30,
+
             Coffee => 9,
             Cocoa => 16,
             Milkshake => 40,
+
+            Apple => 21,
+            Branch => 35,
+            Honey => 63,
         }
     }
 }

@@ -3,7 +3,7 @@ use bevy::window::PrimaryWindow;
 
 #[derive(Resource)]
 pub struct MarketInventory {
-    pub items: [Item; 6],
+    pub items: [Item; 9],
     pub balance: u32,
 }
 
@@ -17,6 +17,9 @@ impl Default for MarketInventory {
                 Item::new(ItemType::Coffee, 8),
                 Item::new(ItemType::Cocoa, 9),
                 Item::new(ItemType::Milkshake, 18),
+                Item::new(ItemType::Apple, 20),
+                Item::new(ItemType::Branch, 11),
+                Item::new(ItemType::Honey, 3),
             ],
             balance: 100,
         }
@@ -278,6 +281,9 @@ fn draw_market(
                                                                     ItemType::Coffee => item_icons.coffee.clone(),
                                                                     ItemType::Cocoa => item_icons.cocoa.clone(),
                                                                     ItemType::Milkshake => item_icons.milkshake.clone(),
+                                                                    ItemType::Apple => item_icons.milkshake.clone(),
+                                                                    ItemType::Branch => item_icons.branch.clone(),
+                                                                    ItemType::Honey => item_icons.honey.clone(),
                                                                 }
                                                             } else {
                                                                 item_icons.empty.clone()
@@ -777,6 +783,9 @@ fn item_button_interaction(
                             ItemType::Coffee => item_icons.coffee.clone(),
                             ItemType::Cocoa => item_icons.cocoa.clone(),
                             ItemType::Milkshake => item_icons.milkshake.clone(),
+                            ItemType::Apple => item_icons.apple.clone(),
+                            ItemType::Branch => item_icons.branch.clone(),
+                            ItemType::Honey => item_icons.honey.clone(),
                         },
                         quantity: target_item.quantity,
                         buy_price: target_item.base_buy_price,

@@ -7,7 +7,7 @@ use super::UiState;
 #[derive(Resource)]
 pub struct Inventory {
     // items: [Item; 30],
-    pub items: [Item; 6],
+    pub items: [Item; 9],
     pub balance: u32,
 }
 
@@ -21,6 +21,9 @@ impl Default for Inventory {
                 Item::new(ItemType::Coffee, 0),
                 Item::new(ItemType::Cocoa, 0),
                 Item::new(ItemType::Milkshake, 0),
+                Item::new(ItemType::Apple, 0),
+                Item::new(ItemType::Branch, 0),
+                Item::new(ItemType::Honey, 0),
             ],
             balance: 100,
         }
@@ -315,6 +318,9 @@ fn draw_inventory(
                                                                     ItemType::Coffee => item_icons.coffee.clone(),
                                                                     ItemType::Cocoa => item_icons.cocoa.clone(),
                                                                     ItemType::Milkshake => item_icons.milkshake.clone(),
+                                                                    ItemType::Apple => item_icons.apple.clone(),
+                                                                    ItemType::Branch => item_icons.branch.clone(),
+                                                                    ItemType::Honey => item_icons.honey.clone(),
                                                                 }
                                                             } else {
                                                                 item_icons.empty.clone()
@@ -787,6 +793,9 @@ fn item_button_interaction(
                             ItemType::Coffee => item_icons.coffee.clone(),
                             ItemType::Cocoa => item_icons.cocoa.clone(),
                             ItemType::Milkshake => item_icons.milkshake.clone(),
+                            ItemType::Apple => item_icons.apple.clone(),
+                            ItemType::Branch => item_icons.branch.clone(),
+                            ItemType::Honey => item_icons.honey.clone(),
                         },
                         quantity: target_item.quantity,
                         sell_price: target_item.sell_price,

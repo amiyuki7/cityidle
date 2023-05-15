@@ -22,7 +22,9 @@ impl BuildingItem {
         use BuildingType::*;
         match building_type {
             CandyShop => 100,
-            CoffeeShop => 3400,
+            CoffeeShop => 100,
+            Tree => 100,
+            Factory => 100,
             _ => 0,
         }
     }
@@ -32,6 +34,8 @@ impl BuildingItem {
         match building_type {
             CandyShop => "Candy Shop",
             CoffeeShop => "Coffee Shop",
+            Tree => "Tree",
+            Factory => "Factory",
             _ => "Untitled",
         }
         .to_string()
@@ -40,7 +44,7 @@ impl BuildingItem {
 
 #[derive(Resource)]
 pub struct ConstructInventory {
-    pub items: [BuildingItem; 2],
+    pub items: [BuildingItem; 4],
 }
 
 impl Default for ConstructInventory {
@@ -49,6 +53,8 @@ impl Default for ConstructInventory {
             items: [
                 BuildingItem::new(BuildingType::CandyShop, 4),
                 BuildingItem::new(BuildingType::CoffeeShop, 3),
+                BuildingItem::new(BuildingType::Tree, 3),
+                BuildingItem::new(BuildingType::Factory, 2),
             ],
         }
     }
@@ -301,6 +307,8 @@ fn draw_construct(
                                                                     BuildingType::CoffeeShop => {
                                                                         item_icons.coffee_shop.clone()
                                                                     }
+                                                                    BuildingType::Tree => item_icons.tree.clone(),
+                                                                    BuildingType::Factory => item_icons.factory.clone(),
                                                                     _ => item_icons.empty.clone(),
                                                                 }
                                                             } else {
@@ -622,6 +630,8 @@ fn item_button_interaction(
                         image: match building_type {
                             BuildingType::CandyShop => item_icons.candy_shop.clone(),
                             BuildingType::CoffeeShop => item_icons.coffee_shop.clone(),
+                            BuildingType::Tree => item_icons.tree.clone(),
+                            BuildingType::Factory => item_icons.factory.clone(),
                             _ => item_icons.empty.clone(),
                         },
                         buy_price: target_item.price,

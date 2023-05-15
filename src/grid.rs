@@ -49,6 +49,8 @@ pub enum BuildingType {
     Construct,
     CandyShop,
     CoffeeShop,
+    Tree,
+    Factory,
 }
 
 impl BuildingType {
@@ -65,6 +67,8 @@ impl BuildingType {
             }
             CandyShop => Transform::from_scale(Vec3::new(1.2, 1.0, 1.2)),
             CoffeeShop => Transform::from_scale(Vec3::new(1.25, 1.0, 1.0)),
+            Tree => Transform::from_scale(Vec3::new(3.0, 3.0, 3.0)),
+            Factory => Transform::from_scale(Vec3::new(0.23, 0.33, 0.23)).with_rotation(Quat::from_rotation_y(PI)),
         }
     }
 }
@@ -254,6 +258,8 @@ pub fn spawn_tile(
                                             scene: match building_type {
                                                 BuildingType::CandyShop => models.candy_shop_scene.clone(),
                                                 BuildingType::CoffeeShop => models.coffee_shop_scene.clone(),
+                                                BuildingType::Tree => models.tree_scene.clone(),
+                                                BuildingType::Factory => models.factory_scene.clone(),
                                                 // This wildcard case will never happen
                                                 _ => models.city_centre_scene.clone(),
                                             },
@@ -341,31 +347,21 @@ fn setup_buildings(
                 .id();
 
             commands.entity(tile_entity).add_child(building);
-        }
+        } else if tile.x == 80.0 && tile.z == 50.0 {
+            let building = commands
+                .spawn(SceneBundle {
+                    scene: models.factory_scene.clone(),
+                    transform: BuildingType::Factory.get_transform(),
+                    ..default()
+                })
+                .insert(Building {
+                    building_type: BuildingType::Factory,
+                    level: 1,
+                })
+                .id();
 
-        // else if tile.x == 80.0 && tile.z == 50.0 {
-        //     let sphere = commands
-        //         .spawn(PbrBundle {
-        //             mesh: meshes.add(
-        //                 Mesh::try_from(shape::Icosphere {
-        //                     radius: 2.5,
-        //                     subdivisions: 3,
-        //                 })
-        //                 .unwrap(),
-        //             ),
-        //             material: materials.add(StandardMaterial {
-        //                 base_color: Color::rgba(0.0, 0.0, 1.0, 0.25),
-        //                 alpha_mode: AlphaMode::Blend,
-        //                 unlit: true,
-        //                 ..default()
-        //             }),
-        //             transform: Transform::from_xyz(0.0, 3.0, 0.0),
-        //             ..default()
-        //         })
-        //         .id();
-        //
-        //     commands.entity(tile_entity).add_child(sphere);
-        // }
+            commands.entity(tile_entity).add_child(building);
+        }
     }
 
     debug!("Finished setting up buildings");
