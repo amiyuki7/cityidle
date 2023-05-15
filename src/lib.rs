@@ -1,10 +1,12 @@
 use bevy::prelude::*;
 
 mod camera;
+mod data;
 mod grid;
 mod ui;
 
 pub use camera::*;
+pub use data::*;
 pub use grid::*;
 pub use ui::*;
 

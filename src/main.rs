@@ -44,6 +44,7 @@ fn main() {
         .add_plugin(UpgradePlugin)
         .add_plugin(AutoSavePlugin)
         .init_resource::<Keybinds>()
+        .init_resource::<UpgradeData>()
         .insert_resource(Msaa::default())
         .insert_resource(SelectionSettings {
             click_nothing_deselect_all: true,
