@@ -281,7 +281,7 @@ fn draw_market(
                                                                     ItemType::Coffee => item_icons.coffee.clone(),
                                                                     ItemType::Cocoa => item_icons.cocoa.clone(),
                                                                     ItemType::Milkshake => item_icons.milkshake.clone(),
-                                                                    ItemType::Apple => item_icons.milkshake.clone(),
+                                                                    ItemType::Apple => item_icons.apple.clone(),
                                                                     ItemType::Branch => item_icons.branch.clone(),
                                                                     ItemType::Honey => item_icons.honey.clone(),
                                                                 }
