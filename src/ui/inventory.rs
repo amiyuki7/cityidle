@@ -7,7 +7,7 @@ use super::UiState;
 #[derive(Resource)]
 pub struct Inventory {
     // items: [Item; 30],
-    pub items: [Item; 9],
+    pub items: [Item; 18],
     pub balance: u32,
 }
 
@@ -15,6 +15,9 @@ impl Default for Inventory {
     fn default() -> Self {
         Self {
             items: [
+                Item::new(ItemType::BronzeCoin, 5),
+                Item::new(ItemType::SilverCoin, 1),
+                Item::new(ItemType::GoldCoin, 0),
                 Item::new(ItemType::Taffy, 26),
                 Item::new(ItemType::Nougat, 14),
                 Item::new(ItemType::Marshmallow, 3),
@@ -24,6 +27,12 @@ impl Default for Inventory {
                 Item::new(ItemType::Apple, 0),
                 Item::new(ItemType::Branch, 0),
                 Item::new(ItemType::Honey, 0),
+                Item::new(ItemType::Steel, 0),
+                Item::new(ItemType::Chip, 0),
+                Item::new(ItemType::Phone, 0),
+                Item::new(ItemType::Log, 0),
+                Item::new(ItemType::Lantern, 0),
+                Item::new(ItemType::Axe, 0),
             ],
             balance: 100,
         }
@@ -310,6 +319,13 @@ fn draw_inventory(
                                                         texture: {
                                                             if i < inventory.items.len() {
                                                                 match inventory.items[i].item_type {
+                                                                    ItemType::BronzeCoin => {
+                                                                        item_icons.bronze_coin.clone()
+                                                                    }
+                                                                    ItemType::SilverCoin => {
+                                                                        item_icons.silver_coin.clone()
+                                                                    }
+                                                                    ItemType::GoldCoin => item_icons.gold_coin.clone(),
                                                                     ItemType::Taffy => item_icons.taffy.clone(),
                                                                     ItemType::Nougat => item_icons.nougat.clone(),
                                                                     ItemType::Marshmallow => {
@@ -321,6 +337,12 @@ fn draw_inventory(
                                                                     ItemType::Apple => item_icons.apple.clone(),
                                                                     ItemType::Branch => item_icons.branch.clone(),
                                                                     ItemType::Honey => item_icons.honey.clone(),
+                                                                    ItemType::Steel => item_icons.steel.clone(),
+                                                                    ItemType::Chip => item_icons.chip.clone(),
+                                                                    ItemType::Phone => item_icons.phone.clone(),
+                                                                    ItemType::Log => item_icons.log.clone(),
+                                                                    ItemType::Lantern => item_icons.lantern.clone(),
+                                                                    ItemType::Axe => item_icons.axe.clone(),
                                                                 }
                                                             } else {
                                                                 item_icons.empty.clone()
@@ -787,6 +809,9 @@ fn item_button_interaction(
                     send_change_item_stats_event.send(ChangeItemStatsEvent {
                         name: target_item.name.clone(),
                         image: match item_type {
+                            ItemType::BronzeCoin => item_icons.bronze_coin.clone(),
+                            ItemType::SilverCoin => item_icons.silver_coin.clone(),
+                            ItemType::GoldCoin => item_icons.gold_coin.clone(),
                             ItemType::Taffy => item_icons.taffy.clone(),
                             ItemType::Nougat => item_icons.nougat.clone(),
                             ItemType::Marshmallow => item_icons.marshmallow.clone(),
@@ -796,6 +821,12 @@ fn item_button_interaction(
                             ItemType::Apple => item_icons.apple.clone(),
                             ItemType::Branch => item_icons.branch.clone(),
                             ItemType::Honey => item_icons.honey.clone(),
+                            ItemType::Steel => item_icons.steel.clone(),
+                            ItemType::Chip => item_icons.chip.clone(),
+                            ItemType::Phone => item_icons.phone.clone(),
+                            ItemType::Log => item_icons.log.clone(),
+                            ItemType::Lantern => item_icons.lantern.clone(),
+                            ItemType::Axe => item_icons.axe.clone(),
                         },
                         quantity: target_item.quantity,
                         sell_price: target_item.sell_price,

@@ -48,6 +48,7 @@ pub struct Models {
     pub coffee_shop_scene: Handle<Scene>,
     pub tree_scene: Handle<Scene>,
     pub factory_scene: Handle<Scene>,
+    pub cabin_scene: Handle<Scene>,
 }
 
 pub fn load_models(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -59,6 +60,7 @@ pub fn load_models(mut commands: Commands, asset_server: Res<AssetServer>) {
         coffee_shop_scene: asset_server.load("coffee_shop.glb#Scene0"),
         tree_scene: asset_server.load("tree.glb#Scene0"),
         factory_scene: asset_server.load("factory.glb#Scene0"),
+        cabin_scene: asset_server.load("cabin.glb#Scene0"),
     });
 }
 

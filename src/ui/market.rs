@@ -3,7 +3,7 @@ use bevy::window::PrimaryWindow;
 
 #[derive(Resource)]
 pub struct MarketInventory {
-    pub items: [Item; 9],
+    pub items: [Item; 15],
     pub balance: u32,
 }
 
@@ -20,6 +20,12 @@ impl Default for MarketInventory {
                 Item::new(ItemType::Apple, 20),
                 Item::new(ItemType::Branch, 11),
                 Item::new(ItemType::Honey, 3),
+                Item::new(ItemType::Steel, 10),
+                Item::new(ItemType::Chip, 3),
+                Item::new(ItemType::Phone, 1),
+                Item::new(ItemType::Log, 10),
+                Item::new(ItemType::Lantern, 5),
+                Item::new(ItemType::Axe, 2),
             ],
             balance: 100,
         }
@@ -273,6 +279,13 @@ fn draw_market(
                                                         texture: {
                                                             if i < market_inventory.items.len() {
                                                                 match market_inventory.items[i].item_type {
+                                                                    ItemType::BronzeCoin => {
+                                                                        item_icons.bronze_coin.clone()
+                                                                    }
+                                                                    ItemType::SilverCoin => {
+                                                                        item_icons.silver_coin.clone()
+                                                                    }
+                                                                    ItemType::GoldCoin => item_icons.gold_coin.clone(),
                                                                     ItemType::Taffy => item_icons.taffy.clone(),
                                                                     ItemType::Nougat => item_icons.nougat.clone(),
                                                                     ItemType::Marshmallow => {
@@ -284,6 +297,12 @@ fn draw_market(
                                                                     ItemType::Apple => item_icons.apple.clone(),
                                                                     ItemType::Branch => item_icons.branch.clone(),
                                                                     ItemType::Honey => item_icons.honey.clone(),
+                                                                    ItemType::Steel => item_icons.steel.clone(),
+                                                                    ItemType::Chip => item_icons.chip.clone(),
+                                                                    ItemType::Phone => item_icons.phone.clone(),
+                                                                    ItemType::Log => item_icons.log.clone(),
+                                                                    ItemType::Lantern => item_icons.lantern.clone(),
+                                                                    ItemType::Axe => item_icons.axe.clone(),
                                                                 }
                                                             } else {
                                                                 item_icons.empty.clone()
@@ -777,6 +796,9 @@ fn item_button_interaction(
                     send_change_item_stats_event.send(ChangeItemStatsEvent {
                         name: target_item.name.clone(),
                         image: match item_type {
+                            ItemType::BronzeCoin => item_icons.bronze_coin.clone(),
+                            ItemType::SilverCoin => item_icons.silver_coin.clone(),
+                            ItemType::GoldCoin => item_icons.gold_coin.clone(),
                             ItemType::Taffy => item_icons.taffy.clone(),
                             ItemType::Nougat => item_icons.nougat.clone(),
                             ItemType::Marshmallow => item_icons.marshmallow.clone(),
@@ -786,6 +808,12 @@ fn item_button_interaction(
                             ItemType::Apple => item_icons.apple.clone(),
                             ItemType::Branch => item_icons.branch.clone(),
                             ItemType::Honey => item_icons.honey.clone(),
+                            ItemType::Steel => item_icons.steel.clone(),
+                            ItemType::Chip => item_icons.chip.clone(),
+                            ItemType::Phone => item_icons.phone.clone(),
+                            ItemType::Log => item_icons.log.clone(),
+                            ItemType::Lantern => item_icons.lantern.clone(),
+                            ItemType::Axe => item_icons.axe.clone(),
                         },
                         quantity: target_item.quantity,
                         buy_price: target_item.base_buy_price,

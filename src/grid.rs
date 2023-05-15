@@ -43,7 +43,7 @@ impl Tile {
     }
 }
 
-#[derive(Reflect, FromReflect, Debug, PartialEq, Clone, Copy)]
+#[derive(Reflect, FromReflect, Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum BuildingType {
     CityCentre,
     Market,
@@ -52,6 +52,7 @@ pub enum BuildingType {
     CoffeeShop,
     Tree,
     Factory,
+    Cabin,
 }
 
 impl BuildingType {
@@ -65,6 +66,7 @@ impl BuildingType {
             CoffeeShop => "Café",
             Tree => "Big Tree",
             Factory => "Factory",
+            Cabin => "Cabin",
         }
         .to_string()
     }
@@ -84,6 +86,7 @@ impl BuildingType {
             CoffeeShop => Transform::from_scale(Vec3::new(1.25, 1.0, 1.0)),
             Tree => Transform::from_scale(Vec3::new(3.0, 3.0, 3.0)),
             Factory => Transform::from_scale(Vec3::new(0.23, 0.33, 0.23)).with_rotation(Quat::from_rotation_y(PI)),
+            Cabin => Transform::from_xyz(1.0, 0.0, -1.0).with_scale(Vec3::new(0.004, 0.006, 0.005)),
         }
     }
 }
@@ -92,6 +95,7 @@ impl BuildingType {
 pub struct Building {
     pub building_type: BuildingType,
     pub level: u8,
+    pub yields: Vec<(ItemType, u32)>,
 }
 
 pub fn spawn_grid(
@@ -284,6 +288,7 @@ pub fn spawn_tile(
                                                 BuildingType::CoffeeShop => models.coffee_shop_scene.clone(),
                                                 BuildingType::Tree => models.tree_scene.clone(),
                                                 BuildingType::Factory => models.factory_scene.clone(),
+                                                BuildingType::Cabin => models.cabin_scene.clone(),
                                                 // This wildcard case will never happen
                                                 _ => models.city_centre_scene.clone(),
                                             },
@@ -293,6 +298,7 @@ pub fn spawn_tile(
                                         .insert(Building {
                                             building_type,
                                             level: 1,
+                                            yields: vec![],
                                         })
                                         .id();
 
@@ -337,6 +343,7 @@ fn setup_buildings(
                 .insert(Building {
                     building_type: BuildingType::CityCentre,
                     level: 1,
+                    yields: vec![],
                 })
                 .id();
 
@@ -351,6 +358,7 @@ fn setup_buildings(
                 .insert(Building {
                     building_type: BuildingType::Market,
                     level: 1,
+                    yields: vec![],
                 })
                 .id();
 
@@ -365,26 +373,12 @@ fn setup_buildings(
                 .insert(Building {
                     building_type: BuildingType::Construct,
                     level: 1,
+                    yields: vec![],
                 })
                 .id();
 
             commands.entity(tile_entity).add_child(building);
         }
-        // } else if tile.x == 80.0 && tile.z == 50.0 {
-        //     let building = commands
-        //         .spawn(SceneBundle {
-        //             scene: models.factory_scene.clone(),
-        //             transform: BuildingType::Factory.get_transform(),
-        //             ..default()
-        //         })
-        //         .insert(Building {
-        //             building_type: BuildingType::Factory,
-        //             level: 1,
-        //         })
-        //         .id();
-        //
-        //     commands.entity(tile_entity).add_child(building);
-        // }
     }
 
     debug!("Finished setting up buildings");

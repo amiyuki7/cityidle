@@ -25,6 +25,7 @@ impl BuildingItem {
             CoffeeShop => 100,
             Tree => 100,
             Factory => 100,
+            Cabin => 100,
             _ => 0,
         }
     }
@@ -36,6 +37,7 @@ impl BuildingItem {
             CoffeeShop => "Coffee Shop",
             Tree => "Tree",
             Factory => "Factory",
+            Cabin => "Cabin",
             _ => "Untitled",
         }
         .to_string()
@@ -44,7 +46,7 @@ impl BuildingItem {
 
 #[derive(Resource)]
 pub struct ConstructInventory {
-    pub items: [BuildingItem; 4],
+    pub items: [BuildingItem; 5],
 }
 
 impl Default for ConstructInventory {
@@ -55,6 +57,7 @@ impl Default for ConstructInventory {
                 BuildingItem::new(BuildingType::CoffeeShop, 3),
                 BuildingItem::new(BuildingType::Tree, 3),
                 BuildingItem::new(BuildingType::Factory, 2),
+                BuildingItem::new(BuildingType::Cabin, 2),
             ],
         }
     }
@@ -309,6 +312,7 @@ fn draw_construct(
                                                                     }
                                                                     BuildingType::Tree => item_icons.tree.clone(),
                                                                     BuildingType::Factory => item_icons.factory.clone(),
+                                                                    BuildingType::Cabin => item_icons.cabin.clone(),
                                                                     _ => item_icons.empty.clone(),
                                                                 }
                                                             } else {
@@ -632,6 +636,7 @@ fn item_button_interaction(
                             BuildingType::CoffeeShop => item_icons.coffee_shop.clone(),
                             BuildingType::Tree => item_icons.tree.clone(),
                             BuildingType::Factory => item_icons.factory.clone(),
+                            BuildingType::Cabin => item_icons.cabin.clone(),
                             _ => item_icons.empty.clone(),
                         },
                         buy_price: target_item.price,
