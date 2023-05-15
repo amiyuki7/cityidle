@@ -41,6 +41,7 @@ fn main() {
         .add_plugin(InventoryPlugin)
         .add_plugin(MarketPlugin)
         .add_plugin(ConstructPlugin)
+        .add_plugin(UpgradePlugin)
         .add_plugin(AutoSavePlugin)
         .init_resource::<Keybinds>()
         .insert_resource(Msaa::default())

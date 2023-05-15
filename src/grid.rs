@@ -11,6 +11,7 @@ pub struct GridPlugin;
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<SetupState>()
+            .add_event::<UpgradeTarget>()
             .register_type::<SetupState>()
             .add_plugin(StateInspectorPlugin::<SetupState>::default())
             .register_type::<Tile>()
@@ -54,6 +55,20 @@ pub enum BuildingType {
 }
 
 impl BuildingType {
+    pub fn get_name(&self) -> String {
+        use BuildingType::*;
+        match self {
+            CityCentre => "City Centre",
+            Market => "The Market",
+            Construct => "The Construct",
+            CandyShop => "Candy Shop",
+            CoffeeShop => "Café",
+            Tree => "Big Tree",
+            Factory => "Factory",
+        }
+        .to_string()
+    }
+
     pub fn get_transform(&self) -> Transform {
         use BuildingType::*;
 
@@ -118,6 +133,11 @@ pub fn spawn_grid(
     }
     debug!("Finished spawning tiles");
     next_setup_state.set(SetupState::SpawnTileDone);
+}
+
+#[derive(Debug)]
+pub struct UpgradeTarget {
+    pub target_entity: Entity,
 }
 
 #[derive(Component)]
@@ -200,7 +220,7 @@ pub fn spawn_tile(
             OnPointer::<Click>::run_callback(
                 // This is a big closure lol
                 |In(event): In<ListenedEvent<Click>>,
-                 buildings: Query<(&Parent, &Building), With<Building>>,
+                 buildings: Query<(Entity, &Parent, &Building), With<Building>>,
                  mut next_ui_state: ResMut<NextState<UiState>>,
                  camera_state: Res<State<CameraState>>,
                  mut previous_camera_state: ResMut<PreviousCameraState>,
@@ -210,19 +230,21 @@ pub fn spawn_tile(
                  mut callback_commands: Commands,
                  preview_spheres: Query<(&Parent, Entity), With<ConstructPreviewSphere>>,
                  mut building_stash: ResMut<BuildingStash>,
+                 mut send_upgrade_target: EventWriter<UpgradeTarget>,
+                 // mut upgrade_target: ResMut<UpgradeTarget>,
                  models: Res<Models>| {
                     if construct_state.0 == ConstructPhase::Normal {
-                        for (parent, building) in buildings.iter() {
+                        for (entity, parent, building) in buildings.iter() {
                             if parent.get() == event.target {
                                 // We have found the targetted building
                                 previous_camera_state.0 = Some(camera_state.0.clone());
                                 send_change_camera_state_event.send(ChangeCameraStateEvent(CameraState::Frozen));
 
                                 match building.building_type {
-                                    BuildingType::CityCentre => {
-                                        //
-                                        next_ui_state.set(UiState::CityCentreInfo)
-                                    }
+                                    // BuildingType::CityCentre => {
+                                    //     //
+                                    //     next_ui_state.set(UiState::CityCentreInfo)
+                                    // }
                                     BuildingType::Market => {
                                         //
                                         next_ui_state.set(UiState::Market)
@@ -232,7 +254,9 @@ pub fn spawn_tile(
                                         next_ui_state.set(UiState::Construct)
                                     }
                                     _ => {
-                                        next_ui_state.set(UiState::BuildingInfo);
+                                        next_ui_state.set(UiState::Upgrade);
+                                        send_upgrade_target.send(UpgradeTarget { target_entity: entity });
+                                        // upgrade_target.target_entity = entity;
                                     }
                                 }
 
@@ -243,7 +267,7 @@ pub fn spawn_tile(
                         // Check if the sphere is on a tile without a building
                         let mut can_spawn_here = true;
                         if let Some((sphere_parent, sphere_entity)) = preview_spheres.iter().next() {
-                            for (building_parent, _) in buildings.iter() {
+                            for (_, building_parent, _) in buildings.iter() {
                                 if sphere_parent.get() == event.target && building_parent.get() == event.target {
                                     can_spawn_here = false;
                                 }
@@ -298,13 +322,11 @@ pub fn spawn_tile(
 
 fn setup_buildings(
     mut commands: Commands,
-    mut tiles: Query<(Entity, &mut Tile)>,
+    tiles: Query<(Entity, &Tile)>,
     models: Res<Models>,
     mut next_setup_state: ResMut<NextState<SetupState>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for (tile_entity, mut tile) in tiles.iter_mut() {
+    for (tile_entity, tile) in tiles.iter() {
         if tile.x == 70.0 && tile.z == 60.0 {
             let building = commands
                 .spawn(SceneBundle {
@@ -347,21 +369,22 @@ fn setup_buildings(
                 .id();
 
             commands.entity(tile_entity).add_child(building);
-        } else if tile.x == 80.0 && tile.z == 50.0 {
-            let building = commands
-                .spawn(SceneBundle {
-                    scene: models.factory_scene.clone(),
-                    transform: BuildingType::Factory.get_transform(),
-                    ..default()
-                })
-                .insert(Building {
-                    building_type: BuildingType::Factory,
-                    level: 1,
-                })
-                .id();
-
-            commands.entity(tile_entity).add_child(building);
         }
+        // } else if tile.x == 80.0 && tile.z == 50.0 {
+        //     let building = commands
+        //         .spawn(SceneBundle {
+        //             scene: models.factory_scene.clone(),
+        //             transform: BuildingType::Factory.get_transform(),
+        //             ..default()
+        //         })
+        //         .insert(Building {
+        //             building_type: BuildingType::Factory,
+        //             level: 1,
+        //         })
+        //         .id();
+        //
+        //     commands.entity(tile_entity).add_child(building);
+        // }
     }
 
     debug!("Finished setting up buildings");
