@@ -15,12 +15,12 @@ impl Default for Inventory {
     fn default() -> Self {
         Self {
             items: [
-                Item::new(ItemType::BronzeCoin, 5),
-                Item::new(ItemType::SilverCoin, 1),
+                Item::new(ItemType::BronzeCoin, 0),
+                Item::new(ItemType::SilverCoin, 0),
                 Item::new(ItemType::GoldCoin, 0),
-                Item::new(ItemType::Taffy, 26),
-                Item::new(ItemType::Nougat, 14),
-                Item::new(ItemType::Marshmallow, 3),
+                Item::new(ItemType::Taffy, 0),
+                Item::new(ItemType::Nougat, 0),
+                Item::new(ItemType::Marshmallow, 0),
                 Item::new(ItemType::Coffee, 0),
                 Item::new(ItemType::Cocoa, 0),
                 Item::new(ItemType::Milkshake, 0),
@@ -34,7 +34,7 @@ impl Default for Inventory {
                 Item::new(ItemType::Lantern, 0),
                 Item::new(ItemType::Axe, 0),
             ],
-            balance: 100,
+            balance: 300,
         }
     }
 }
