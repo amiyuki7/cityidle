@@ -81,7 +81,11 @@ fn collect_button_interaction(
     mut buildings: Query<(Entity, &mut Building)>,
     selected_building: Res<SelectedBuilding>,
     mut inventory: ResMut<Inventory>,
-    mut yield_count_texts: Query<&mut Text, With<YieldCountText>>,
+    mut text_set: ParamSet<(
+        Query<&mut Text, With<YieldCountText>>,
+        Query<(&mut Text, &UpgradeMaterialText), With<UpgradeMaterialText>>,
+    )>,
+    upgrade_data: Res<UpgradeData>,
 ) {
     for (interaction, mut background_colour) in interaction_query.iter_mut() {
         let mut target_building = None;
@@ -105,6 +109,7 @@ fn collect_button_interaction(
             Interaction::Clicked => {
                 // Add all yields to inventory and set yields to 0
                 target_building
+                    .as_mut()
                     .unwrap()
                     .yields
                     .iter_mut()
@@ -119,8 +124,34 @@ fn collect_button_interaction(
                         *quantity = 0;
                     });
 
-                for mut text in yield_count_texts.iter_mut() {
+                for mut text in text_set.p0().iter_mut() {
                     text.sections[0].value = "x0".to_string();
+                }
+
+                for (mut text, UpgradeMaterialText { position }) in text_set.p1().iter_mut() {
+                    let items_required = upgrade_data.map[&target_building.as_ref().unwrap().building_type]
+                        [&target_building.as_ref().unwrap().level]
+                        .upgrade_materials[*position];
+
+                    let quantity_acquired = inventory
+                        .items
+                        .iter()
+                        .find(|item| item.item_type == items_required.0)
+                        .unwrap()
+                        .quantity;
+
+                    let quantity_required = items_required.1;
+
+                    let mut colour = Color::GREEN;
+
+                    if quantity_acquired < quantity_required {
+                        colour = Color::RED;
+                    }
+
+                    let quantity_text = format!("{quantity_acquired}/{quantity_required}");
+
+                    text.sections[0].value = quantity_text;
+                    text.sections[0].style.color = colour;
                 }
             }
             Interaction::Hovered => *background_colour = Color::rgb(0.34, 0.37, 0.60).into(),
