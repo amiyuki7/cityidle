@@ -1,5 +1,5 @@
 use crate::*;
-use bevy::{render::render_graph::Node, window::PrimaryWindow};
+use bevy::window::PrimaryWindow;
 
 pub struct UpgradePlugin;
 
@@ -468,15 +468,109 @@ fn draw_ui(
                         })
                         .insert(Name::new("Right side container"))
                         .with_children(|commands| {
-                            commands.spawn(NodeBundle {
-                                style: Style {
-                                    size: Size::new(Val::Percent(100.0), Val::Percent(15.0)),
-                                    align_items: AlignItems::Center,
+                            commands
+                                .spawn(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(15.0)),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    background_color: Color::PURPLE.into(),
                                     ..default()
-                                },
-                                background_color: Color::PURPLE.into(),
-                                ..default()
-                            });
+                                })
+                                .with_children(|commands| {
+                                    commands.spawn(TextBundle {
+                                        // style: Style { ..default() },
+                                        text: Text::from_section(
+                                            "Next Level Requirements",
+                                            TextStyle {
+                                                font: asset_server.load("font.otf"),
+                                                font_size: physical_screen_height / 72.0,
+                                                color: Color::WHITE,
+                                            },
+                                        ),
+                                        ..default()
+                                    });
+                                });
+
+                            commands
+                                .spawn(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(50.0)),
+                                        flex_direction: FlexDirection::Row,
+                                        justify_content: JustifyContent::SpaceAround,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    background_color: Color::PINK.into(),
+                                    ..default()
+                                })
+                                .with_children(|commands| {
+                                    for i in 0..=2 {
+                                        commands
+                                            .spawn(NodeBundle {
+                                                style: Style {
+                                                    size: Size::new(Val::Percent(30.0), Val::Percent(80.0)),
+                                                    flex_direction: FlexDirection::Column,
+                                                    justify_content: JustifyContent::Center,
+                                                    align_items: AlignItems::Center,
+                                                    ..default()
+                                                },
+                                                background_color: Color::GREEN.into(),
+                                                ..default()
+                                            })
+                                            .with_children(|commands| {
+                                                commands.spawn(ImageBundle {
+                                                    style: Style {
+                                                        size: Size::new(Val::Percent(80.0), Val::Percent(45.0)),
+                                                        ..default()
+                                                    },
+                                                    image: UiImage {
+                                                        texture: {
+                                                            if next_level_stats.is_none() {
+                                                                item_icons.empty.clone()
+                                                            } else {
+                                                                let upgrade_materials = upgrade_data.map
+                                                                    [&target_building.building_type]
+                                                                    [&target_building.level]
+                                                                    .upgrade_materials;
+
+                                                                match upgrade_materials[i].0 {
+                                                                    ItemType::BronzeCoin => {
+                                                                        item_icons.bronze_coin.clone()
+                                                                    }
+                                                                    ItemType::SilverCoin => {
+                                                                        item_icons.silver_coin.clone()
+                                                                    }
+                                                                    ItemType::GoldCoin => item_icons.gold_coin.clone(),
+                                                                    ItemType::Taffy => item_icons.taffy.clone(),
+                                                                    ItemType::Nougat => item_icons.nougat.clone(),
+                                                                    ItemType::Marshmallow => {
+                                                                        item_icons.marshmallow.clone()
+                                                                    }
+                                                                    ItemType::Coffee => item_icons.coffee.clone(),
+                                                                    ItemType::Cocoa => item_icons.cocoa.clone(),
+                                                                    ItemType::Milkshake => item_icons.milkshake.clone(),
+                                                                    ItemType::Apple => item_icons.apple.clone(),
+                                                                    ItemType::Branch => item_icons.branch.clone(),
+                                                                    ItemType::Honey => item_icons.honey.clone(),
+                                                                    ItemType::Steel => item_icons.steel.clone(),
+                                                                    ItemType::Chip => item_icons.chip.clone(),
+                                                                    ItemType::Phone => item_icons.phone.clone(),
+                                                                    ItemType::Log => item_icons.log.clone(),
+                                                                    ItemType::Lantern => item_icons.lantern.clone(),
+                                                                    ItemType::Axe => item_icons.axe.clone(),
+                                                                }
+                                                            }
+                                                        },
+                                                        ..default()
+                                                    },
+                                                    ..default()
+                                                });
+                                            });
+                                    }
+                                });
                         });
                 });
         });
