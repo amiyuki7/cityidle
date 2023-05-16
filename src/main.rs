@@ -22,7 +22,7 @@ fn main() {
                 })
                 .set(LogPlugin {
                     level: Level::TRACE,
-                    filter: "wgpu=warn,bevy_ecs=info,winit=info,naga=info,bevy_app=info,bevy_winit=info,bevy_render=info,bevy_core=info,gilrs=info"
+                    filter: "wgpu=warn,bevy_ecs=info,winit=info,naga=info,bevy_app=info,bevy_winit=info,bevy_render=info,bevy_core=info,gilrs=info,bevy_picking_core=warn"
                         .to_string(),
                 }),
         )
