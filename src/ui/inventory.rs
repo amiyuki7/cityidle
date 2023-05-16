@@ -161,7 +161,14 @@ fn draw_inventory(
         }
     }
 
-    let physical_screen_height = primary_window.single().resolution.physical_height() as f32;
+    // UI takes up half the screen & renders at a ratio of 1:1.777
+    let mut inventory_width = primary_window.single().resolution.width() / 2.0;
+    let mut inventory_height = inventory_width / (1920.0 / 1080.0);
+
+    if inventory_height > primary_window.single().resolution.height() {
+        inventory_height = primary_window.single().resolution.height() / 2.0;
+        inventory_width = inventory_height * (1920.0 / 1080.0);
+    }
 
     commands
         .spawn(NodeBundle {
@@ -179,13 +186,15 @@ fn draw_inventory(
             commands
                 .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(50.0), Val::Percent(50.0)),
+                        size: Size::new(Val::Px(inventory_width), Val::Px(inventory_height)),
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::SpaceEvenly,
                         align_items: AlignItems::Center,
-                        align_content: AlignContent::SpaceAround,
                         align_self: AlignSelf::Center,
-                        margin: UiRect::left(Val::Percent(25.0)),
+                        margin: UiRect::left(Val::Px(
+                            // Offset required for the centre of inventory width to align with centre of screen
+                            (primary_window.single().resolution.width() - inventory_width) / 2.0,
+                        )),
                         ..default()
                     },
                     background_color: Color::rgb(0.13, 0.14, 0.26).into(),
@@ -235,7 +244,7 @@ fn draw_inventory(
                                                 TextStyle {
                                                     font: asset_server.load("font.otf"),
                                                     // Font size 40 looked nice on my own screen height of 2880, which is a ratio of 1:72
-                                                    font_size: physical_screen_height / 72.0,
+                                                    font_size: inventory_width / 36.0,
                                                     color: Color::WHITE,
                                                 },
                                             ),
@@ -254,7 +263,7 @@ fn draw_inventory(
                                                 format!("City Centre: Level {}", city_centre_level),
                                                 TextStyle {
                                                     font: asset_server.load("font.otf"),
-                                                    font_size: physical_screen_height / 72.0,
+                                                    font_size: inventory_width / 36.0,
                                                     color: Color::WHITE,
                                                 },
                                             ),
@@ -308,10 +317,9 @@ fn draw_inventory(
                                                 // Item icon
                                                 commands.spawn(ImageBundle {
                                                     style: Style {
-                                                        // size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                                                         size: Size::new(
-                                                            Val::Percent(5.0 * (100.0 / 6.0)),
-                                                            Val::Percent(5.0 * (100.0 / 5.0)),
+                                                            Val::Px(inventory_width / 17.5),
+                                                            Val::Px(inventory_width / 17.5),
                                                         ),
                                                         ..default()
                                                     },
@@ -378,7 +386,7 @@ fn draw_inventory(
                                                             },
                                                             TextStyle {
                                                                 font: asset_server.load("font.otf"),
-                                                                font_size: physical_screen_height / 108.0,
+                                                                font_size: inventory_width / 54.0,
                                                                 color: Color::WHITE,
                                                             },
                                                         ),
@@ -431,7 +439,7 @@ fn draw_inventory(
                                             "Item name",
                                             TextStyle {
                                                 font: asset_server.load("font.otf"),
-                                                font_size: physical_screen_height / 60.0,
+                                                font_size: inventory_width / 30.0,
                                                 color: Color::WHITE,
                                             },
                                         ))
@@ -456,7 +464,10 @@ fn draw_inventory(
                                         .spawn(ImageBundle {
                                             image: item_icons.empty.clone().into(),
                                             style: Style {
-                                                size: Size::new(Val::Percent(50.0), Val::Percent(100.0)),
+                                                size: Size::new(
+                                                    Val::Px(inventory_width / 4.0),
+                                                    Val::Px(inventory_width / 4.0),
+                                                ),
                                                 ..default()
                                             },
                                             transform: Transform::from_scale(Vec3::splat(0.8)),
@@ -490,7 +501,7 @@ fn draw_inventory(
                                                 "Quantity: #",
                                                 TextStyle {
                                                     font: asset_server.load("font.otf"),
-                                                    font_size: physical_screen_height / 90.0,
+                                                    font_size: inventory_width / 45.0,
                                                     color: Color::WHITE,
                                                 },
                                             ),
@@ -524,7 +535,7 @@ fn draw_inventory(
                                                 "Sell: $",
                                                 TextStyle {
                                                     font: asset_server.load("font.otf"),
-                                                    font_size: physical_screen_height / 90.0,
+                                                    font_size: inventory_width / 45.0,
                                                     color: Color::WHITE,
                                                 },
                                             ),
@@ -547,19 +558,9 @@ fn draw_inventory(
                                     ..default()
                                 })
                                 .with_children(|commands| {
-                                    spawn_quantity_increment_button(
-                                        commands,
-                                        &asset_server,
-                                        -10,
-                                        physical_screen_height,
-                                    );
+                                    spawn_quantity_increment_button(commands, &asset_server, -10, inventory_width);
 
-                                    spawn_quantity_increment_button(
-                                        commands,
-                                        &asset_server,
-                                        -1,
-                                        physical_screen_height,
-                                    );
+                                    spawn_quantity_increment_button(commands, &asset_server, -1, inventory_width);
 
                                     // Quantity selected
                                     commands
@@ -577,7 +578,7 @@ fn draw_inventory(
                                                 "0",
                                                 TextStyle {
                                                     font: asset_server.load("font.otf"),
-                                                    font_size: physical_screen_height / 60.0,
+                                                    font_size: inventory_width / 30.0,
                                                     color: Color::GREEN,
                                                 },
                                             ),
@@ -588,14 +589,9 @@ fn draw_inventory(
                                             sell_allowed: false,
                                         });
 
-                                    spawn_quantity_increment_button(commands, &asset_server, 1, physical_screen_height);
+                                    spawn_quantity_increment_button(commands, &asset_server, 1, inventory_width);
 
-                                    spawn_quantity_increment_button(
-                                        commands,
-                                        &asset_server,
-                                        10,
-                                        physical_screen_height,
-                                    );
+                                    spawn_quantity_increment_button(commands, &asset_server, 10, inventory_width);
                                 });
 
                             // Sell button
@@ -628,7 +624,7 @@ fn draw_inventory(
                                                 "SELL",
                                                 TextStyle {
                                                     font: asset_server.load("font.otf"),
-                                                    font_size: physical_screen_height / 60.0,
+                                                    font_size: inventory_width / 30.0,
                                                     color: Color::WHITE,
                                                 },
                                             ));
@@ -881,7 +877,7 @@ fn spawn_quantity_increment_button(
     commands: &mut ChildBuilder,
     asset_server: &AssetServer,
     amount: i8,
-    physical_screen_height: f32,
+    base_width: f32,
 ) {
     commands
         .spawn(ButtonBundle {
@@ -906,7 +902,7 @@ fn spawn_quantity_increment_button(
                 format!("{}{}", if amount.is_positive() { "+" } else { "-" }, amount.abs()),
                 TextStyle {
                     font: asset_server.load("font.otf"),
-                    font_size: physical_screen_height / 90.0,
+                    font_size: base_width / 45.0,
                     color: Color::WHITE,
                 },
             ));
