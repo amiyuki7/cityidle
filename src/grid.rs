@@ -16,6 +16,7 @@ impl Plugin for GridPlugin {
             .add_plugin(StateInspectorPlugin::<SetupState>::default())
             .register_type::<Tile>()
             .register_type::<PickSelection>()
+            .register_type::<Building>()
             .add_startup_system(spawn_grid)
             .add_system(setup_buildings.run_if(state_exists_and_equals(SetupState::SpawnTileDone)));
     }
@@ -235,6 +236,7 @@ pub fn spawn_tile(
                  preview_spheres: Query<(&Parent, Entity), With<ConstructPreviewSphere>>,
                  mut building_stash: ResMut<BuildingStash>,
                  mut send_upgrade_target: EventWriter<UpgradeTarget>,
+                 upgrade_data: Res<UpgradeData>,
                  // mut upgrade_target: ResMut<UpgradeTarget>,
                  models: Res<Models>| {
                     if construct_state.0 == ConstructPhase::Normal {
@@ -281,6 +283,10 @@ pub fn spawn_tile(
                                 if let Some(building_type) = building_stash.0 {
                                     callback_commands.entity(sphere_entity).despawn_recursive();
                                     // TODO refactor this into a generic spawn building fn
+
+                                    let yield_data = &upgrade_data.map[&building_type][&1].yields;
+                                    let empty_yields = yield_data.map(|(item_type, _)| (item_type, 0u32));
+
                                     let building = callback_commands
                                         .spawn(SceneBundle {
                                             scene: match building_type {
@@ -298,7 +304,7 @@ pub fn spawn_tile(
                                         .insert(Building {
                                             building_type,
                                             level: 1,
-                                            yields: vec![],
+                                            yields: empty_yields.to_vec(),
                                         })
                                         .id();
 
@@ -343,7 +349,11 @@ fn setup_buildings(
                 .insert(Building {
                     building_type: BuildingType::CityCentre,
                     level: 1,
-                    yields: vec![],
+                    yields: vec![
+                        (ItemType::BronzeCoin, 0),
+                        (ItemType::SilverCoin, 0),
+                        (ItemType::GoldCoin, 0),
+                    ],
                 })
                 .id();
 
