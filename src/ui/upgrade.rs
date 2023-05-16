@@ -67,7 +67,9 @@ struct CollectButton;
 
 // Marker
 #[derive(Component)]
-struct YieldCountText;
+pub struct YieldCountText {
+    pub position: usize,
+}
 
 // Marker
 #[derive(Component)]
@@ -143,6 +145,7 @@ fn upgrade_button_interaction(
     )>,
     mut upgrade_material_images: Query<(&mut UiImage, &UpgradeMaterialImage)>,
     item_icons: Res<ItemIcons>,
+    mut timers: ResMut<Timers>,
 ) {
     let mut target_building = None;
 
@@ -152,7 +155,7 @@ fn upgrade_button_interaction(
         }
 
         if entity == selected_building.building.unwrap() {
-            target_building = Some(building)
+            target_building = Some(building);
         }
     }
 
@@ -207,8 +210,12 @@ fn upgrade_button_interaction(
 
                     inventory.balance -= level_stats.upgrade_cost;
 
-                    // Increase building level and hasten its timer
+                    // Increase building level and speed
                     building.level += 1;
+                    building.speed = next_level_stats.unwrap().speed;
+
+                    timers.update_timer_speed(&selected_building.building.unwrap(), building.speed);
+
                     // As the level changed, these also need to change
                     let level_stats = &upgrade_data.map[&building.building_type][&building.level];
                     let next_level_stats = &upgrade_data.map[&building.building_type].get(&(building.level + 1));
@@ -314,8 +321,8 @@ fn upgrade_button_interaction(
 }
 
 #[derive(Resource, Default)]
-struct SelectedBuilding {
-    building: Option<Entity>,
+pub struct SelectedBuilding {
+    pub building: Option<Entity>,
 }
 
 #[allow(clippy::complexity)]
@@ -668,7 +675,7 @@ fn draw_ui(
                                                         ),
                                                         ..default()
                                                     })
-                                                    .insert(YieldCountText)
+                                                    .insert(YieldCountText { position: i })
                                                     .insert(Name::new("Yield count text"));
                                             });
                                     }

@@ -1,6 +1,6 @@
 use bevy_inspector_egui::quick::StateInspectorPlugin;
 use bevy_mod_picking::prelude::*;
-use std::f32::consts::PI;
+use std::{f32::consts::PI, time::Duration};
 
 use crate::*;
 
@@ -13,7 +13,7 @@ impl Plugin for GridPlugin {
         app.add_state::<SetupState>()
             .add_event::<UpgradeTarget>()
             .register_type::<SetupState>()
-            .add_plugin(StateInspectorPlugin::<SetupState>::default())
+            // .add_plugin(StateInspectorPlugin::<SetupState>::default())
             .register_type::<Tile>()
             .register_type::<PickSelection>()
             .register_type::<Building>()
@@ -97,6 +97,7 @@ pub struct Building {
     pub building_type: BuildingType,
     pub level: u8,
     pub yields: Vec<(ItemType, u32)>,
+    pub speed: u8,
 }
 
 pub fn spawn_grid(
@@ -237,6 +238,7 @@ pub fn spawn_tile(
                  mut building_stash: ResMut<BuildingStash>,
                  mut send_upgrade_target: EventWriter<UpgradeTarget>,
                  upgrade_data: Res<UpgradeData>,
+                 mut timers: ResMut<Timers>,
                  // mut upgrade_target: ResMut<UpgradeTarget>,
                  models: Res<Models>| {
                     if construct_state.0 == ConstructPhase::Normal {
@@ -305,8 +307,11 @@ pub fn spawn_tile(
                                             building_type,
                                             level: 1,
                                             yields: empty_yields.to_vec(),
+                                            speed: upgrade_data.map[&building_type][&1].speed,
                                         })
                                         .id();
+
+                                    timers.add_timer(building, upgrade_data.map[&building_type][&1].speed);
 
                                     callback_commands.entity(event.target).add_child(building);
                                 }
@@ -337,6 +342,8 @@ fn setup_buildings(
     tiles: Query<(Entity, &Tile)>,
     models: Res<Models>,
     mut next_setup_state: ResMut<NextState<SetupState>>,
+    upgrade_data: Res<UpgradeData>,
+    mut timers: ResMut<Timers>,
 ) {
     for (tile_entity, tile) in tiles.iter() {
         if tile.x == 70.0 && tile.z == 60.0 {
@@ -354,8 +361,11 @@ fn setup_buildings(
                         (ItemType::SilverCoin, 0),
                         (ItemType::GoldCoin, 0),
                     ],
+                    speed: upgrade_data.map[&BuildingType::CityCentre][&1].speed,
                 })
                 .id();
+
+            timers.add_timer(building, upgrade_data.map[&BuildingType::CityCentre][&1].speed);
 
             commands.entity(tile_entity).add_child(building);
         } else if tile.x == 70.0 && tile.z == 70.0 {
@@ -369,8 +379,12 @@ fn setup_buildings(
                     building_type: BuildingType::Market,
                     level: 1,
                     yields: vec![],
+                    speed: 30,
                 })
                 .id();
+
+            // Market refreshes every 30s
+            timers.add_timer(building, 30);
 
             commands.entity(tile_entity).add_child(building);
         } else if tile.x == 80.0 && tile.z == 40.0 {
@@ -384,6 +398,7 @@ fn setup_buildings(
                     building_type: BuildingType::Construct,
                     level: 1,
                     yields: vec![],
+                    speed: 0,
                 })
                 .id();
 

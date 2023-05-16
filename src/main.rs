@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     window::WindowMode,
 };
-use bevy_inspector_egui::quick::{StateInspectorPlugin, WorldInspectorPlugin};
+use bevy_inspector_egui::quick::{ResourceInspectorPlugin, StateInspectorPlugin, WorldInspectorPlugin};
 use bevy_mod_picking::{prelude::*, selection::SelectionSettings};
 use cityidle::*;
 
@@ -30,18 +30,20 @@ fn main() {
             DefaultPickingPlugins.build(),
             // .disable::<DebugPickingPlugin>(),
         )
-        .add_plugin(WorldInspectorPlugin::new())
+        // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(GridPlugin)
         .add_state::<CameraState>()
         .register_type::<CameraState>()
         .add_state::<UiState>()
-        .add_plugin(StateInspectorPlugin::<UiState>::default())
-        .add_plugin(StateInspectorPlugin::<CameraState>::default())
+        // .add_plugin(StateInspectorPlugin::<UiState>::default())
+        // .add_plugin(StateInspectorPlugin::<CameraState>::default())
         .add_plugin(GameCameraPlugin)
         .add_plugin(InventoryPlugin)
         .add_plugin(MarketPlugin)
         .add_plugin(ConstructPlugin)
         .add_plugin(UpgradePlugin)
+        .add_plugin(TimerPlugin)
+        .add_plugin(ResourceInspectorPlugin::<Timers>::default())
         .add_plugin(AutoSavePlugin)
         .init_resource::<Keybinds>()
         .init_resource::<UpgradeData>()

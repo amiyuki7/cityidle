@@ -3,11 +3,13 @@ use bevy::prelude::*;
 mod camera;
 mod data;
 mod grid;
+mod timers;
 mod ui;
 
 pub use camera::*;
 pub use data::*;
 pub use grid::*;
+pub use timers::*;
 pub use ui::*;
 
 use bevy::window::CursorGrabMode;
