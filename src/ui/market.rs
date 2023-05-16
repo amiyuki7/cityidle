@@ -459,7 +459,7 @@ fn draw_market(
                                                 ..default()
                                             },
                                             text: Text::from_section(
-                                                "Quantity: #",
+                                                "In stock: #",
                                                 TextStyle {
                                                     font: asset_server.load("font.otf"),
                                                     font_size: inventory_width / 45.0,
@@ -726,7 +726,7 @@ fn buy_button_interaction(
 
                     // Reset quantity text
                     if let Ok(mut quantity_text) = param_set.p1().get_single_mut() {
-                        quantity_text.sections[0].value = format!("Quantity: {}", item.quantity);
+                        quantity_text.sections[0].value = format!("In stock: {}", item.quantity);
                     }
 
                     // Update balance text
@@ -842,7 +842,7 @@ fn change_item_stats(
             name.sections[0].value = event.name.clone();
         }
         for mut quantity in param_set.p1().iter_mut() {
-            quantity.sections[0].value = format!("Quantity: {}", event.quantity);
+            quantity.sections[0].value = format!("In stock: {}", event.quantity);
         }
         for mut sell_price in param_set.p2().iter_mut() {
             sell_price.sections[0].value = format!("Price: ${}", event.buy_price);

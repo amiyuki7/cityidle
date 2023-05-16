@@ -532,7 +532,7 @@ fn draw_inventory(
                                                 ..default()
                                             },
                                             text: Text::from_section(
-                                                "Sell: $",
+                                                "Sell for: $",
                                                 TextStyle {
                                                     font: asset_server.load("font.otf"),
                                                     font_size: inventory_width / 45.0,
@@ -857,7 +857,7 @@ fn change_item_stats(
             quantity.sections[0].value = format!("Quantity: {}", event.quantity);
         }
         for mut sell_price in param_set.p2().iter_mut() {
-            sell_price.sections[0].value = format!("Sell Price: ${}", event.sell_price);
+            sell_price.sections[0].value = format!("Sell for: ${}", event.sell_price);
         }
 
         // Reset sell quantity text
