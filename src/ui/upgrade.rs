@@ -110,7 +110,14 @@ fn draw_ui(
     mut selected_building_resource: ResMut<SelectedBuilding>,
     upgrade_data: Res<UpgradeData>,
 ) {
-    let physical_screen_height = primary_window.single().resolution.physical_height() as f32;
+    // UI takes up half the screen & renders at a ratio of 1:1.777
+    let mut inventory_width = primary_window.single().resolution.width() / 2.0;
+    let mut inventory_height = inventory_width / (1920.0 / 1080.0);
+
+    if inventory_height > primary_window.single().resolution.height() {
+        inventory_height = primary_window.single().resolution.height() / 2.0;
+        inventory_width = inventory_height * (1920.0 / 1080.0);
+    }
 
     let mut target_building = None;
 
@@ -151,13 +158,16 @@ fn draw_ui(
             commands
                 .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(50.0), Val::Percent(50.0)),
+                        size: Size::new(Val::Px(inventory_width), Val::Px(inventory_height)),
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::SpaceEvenly,
                         align_items: AlignItems::Center,
                         align_content: AlignContent::SpaceAround,
                         align_self: AlignSelf::Center,
-                        margin: UiRect::left(Val::Percent(25.0)),
+                        margin: UiRect::left(Val::Px(
+                            // Offset required for the centre of inventory width to align with centre of screen
+                            (primary_window.single().resolution.width() - inventory_width) / 2.0,
+                        )),
                         ..default()
                     },
                     background_color: Color::rgb(0.13, 0.14, 0.26).into(),
@@ -210,7 +220,7 @@ fn draw_ui(
                                                     target_building.building_type.get_name(),
                                                     TextStyle {
                                                         font: asset_server.load("font.otf"),
-                                                        font_size: physical_screen_height / 72.0,
+                                                        font_size: inventory_width / 36.0,
                                                         color: Color::WHITE,
                                                     },
                                                 ),
@@ -244,7 +254,7 @@ fn draw_ui(
                                                     }),
                                                     TextStyle {
                                                         font: asset_server.load("font.otf"),
-                                                        font_size: physical_screen_height / 84.0,
+                                                        font_size: inventory_width / 42.0,
                                                         color: Color::WHITE,
                                                     },
                                                 ),
@@ -253,11 +263,17 @@ fn draw_ui(
 
                                             commands.spawn(TextBundle {
                                                 style: Style {
-                                                    margin: UiRect::all(Val::Percent(5.0)),
+                                                    // margin: UiRect::all(Val::Percent(5.0)),
+                                                    margin: UiRect::new(
+                                                        Val::Percent(5.0),
+                                                        Val::Percent(5.0),
+                                                        Val::Percent(5.0),
+                                                        Val::Percent(10.0),
+                                                    ),
                                                     ..default()
                                                 },
                                                 text: Text::from_section(
-                                                    format!("Speed {}s → {}s", level_stats.speed, {
+                                                    format!("Speed: {}s → {}s", level_stats.speed, {
                                                         if next_level_stats.is_none() {
                                                             "MAX".to_string()
                                                         } else {
@@ -266,7 +282,7 @@ fn draw_ui(
                                                     }),
                                                     TextStyle {
                                                         font: asset_server.load("font.otf"),
-                                                        font_size: physical_screen_height / 84.0,
+                                                        font_size: inventory_width / 42.0,
                                                         color: Color::WHITE,
                                                     },
                                                 ),
@@ -286,12 +302,14 @@ fn draw_ui(
                                             })
                                             .with_children(|commands| {
                                                 // Image
-                                                // let item_type = level_stats.yields.map(|(item_type, _)| item_type);
-                                                // let y = level_stats.yields;
 
                                                 commands.spawn(ImageBundle {
                                                     style: Style {
-                                                        size: Size::new(Val::Percent(18.0), Val::Percent(100.0)),
+                                                        // size: Size::new(Val::Percent(18.0), Val::Percent(100.0)),
+                                                        size: Size::new(
+                                                            Val::Px(inventory_width / 16.0),
+                                                            Val::Px(inventory_width / 16.0),
+                                                        ),
                                                         margin: UiRect::left(Val::Percent(2.0)),
                                                         ..default()
                                                     },
@@ -337,7 +355,7 @@ fn draw_ui(
                                                         }),
                                                         TextStyle {
                                                             font: asset_server.load("font.otf"),
-                                                            font_size: physical_screen_height / 84.0,
+                                                            font_size: inventory_width / 42.0,
                                                             color: Color::WHITE,
                                                         },
                                                     ),
@@ -350,10 +368,11 @@ fn draw_ui(
                             commands
                                 .spawn(NodeBundle {
                                     style: Style {
-                                        size: Size::new(Val::Percent(100.0), Val::Percent(25.0)),
+                                        size: Size::new(Val::Percent(100.0), Val::Percent(20.0)),
                                         flex_direction: FlexDirection::Row,
                                         justify_content: JustifyContent::SpaceEvenly,
                                         align_items: AlignItems::Center,
+                                        margin: UiRect::top(Val::Percent(5.0)),
                                         ..default()
                                     },
                                     background_color: Color::rgb(0.17, 0.19, 0.36).into(),
@@ -375,7 +394,10 @@ fn draw_ui(
                                             .with_children(|commands| {
                                                 commands.spawn(ImageBundle {
                                                     style: Style {
-                                                        size: Size::new(Val::Percent(75.0), Val::Percent(45.0)),
+                                                        size: Size::new(
+                                                            Val::Px(inventory_width / 30.0),
+                                                            Val::Px(inventory_width / 30.0),
+                                                        ),
                                                         ..default()
                                                     },
                                                     image: UiImage {
@@ -414,7 +436,7 @@ fn draw_ui(
                                                             format!("x{}", target_building.yields[i].1),
                                                             TextStyle {
                                                                 font: asset_server.load("font.otf"),
-                                                                font_size: physical_screen_height / 90.0,
+                                                                font_size: inventory_width / 45.0,
                                                                 color: Color::WHITE,
                                                             },
                                                         ),
@@ -428,7 +450,7 @@ fn draw_ui(
                                     commands
                                         .spawn(ButtonBundle {
                                             style: Style {
-                                                size: Size::new(Val::Percent(30.0), Val::Percent(50.0)),
+                                                size: Size::new(Val::Percent(40.0), Val::Percent(100.0)),
                                                 justify_content: JustifyContent::Center,
                                                 align_items: AlignItems::Center,
                                                 ..default()
@@ -445,7 +467,7 @@ fn draw_ui(
                                                     "COLLECT",
                                                     TextStyle {
                                                         font: asset_server.load("font.otf"),
-                                                        font_size: physical_screen_height / 64.0,
+                                                        font_size: inventory_width / 32.0,
                                                         color: Color::WHITE,
                                                     },
                                                 ),
@@ -486,7 +508,7 @@ fn draw_ui(
                                             "Next Level Requirements",
                                             TextStyle {
                                                 font: asset_server.load("font.otf"),
-                                                font_size: physical_screen_height / 72.0,
+                                                font_size: inventory_width / 36.0,
                                                 color: Color::WHITE,
                                             },
                                         ),
@@ -523,7 +545,10 @@ fn draw_ui(
                                             .with_children(|commands| {
                                                 commands.spawn(ImageBundle {
                                                     style: Style {
-                                                        size: Size::new(Val::Percent(80.0), Val::Percent(45.0)),
+                                                        size: Size::new(
+                                                            Val::Px(inventory_width / 10.0),
+                                                            Val::Px(inventory_width / 10.0),
+                                                        ),
                                                         ..default()
                                                     },
                                                     image: UiImage {

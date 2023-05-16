@@ -15,7 +15,7 @@ fn main() {
                     primary_window: Some(Window {
                         title: "City Idle".into(),
                         mode: WindowMode::BorderlessFullscreen,
-                        resizable: false,
+                        resizable: true,
                         ..default()
                     }),
                     ..default()
