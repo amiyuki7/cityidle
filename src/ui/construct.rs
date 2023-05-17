@@ -21,11 +21,11 @@ impl BuildingItem {
     fn get_price(building_type: BuildingType) -> u32 {
         use BuildingType::*;
         match building_type {
-            CandyShop => 100,
-            CoffeeShop => 100,
-            Tree => 100,
-            Factory => 100,
-            Cabin => 100,
+            CandyShop => 150,
+            CoffeeShop => 1200,
+            Tree => 2000,
+            Factory => 3000,
+            Cabin => 2500,
             _ => 0,
         }
     }
