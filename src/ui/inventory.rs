@@ -131,7 +131,7 @@ struct ItemStatsQuantity;
 
 // Marker
 #[derive(Component)]
-struct ItemStatsSellPrice;
+pub struct ItemStatsSellPrice;
 
 // Marker
 #[derive(Component)]
@@ -143,6 +143,11 @@ struct ItemStatsSellQuantity {
 // Marker
 #[derive(Component)]
 struct SellButton;
+
+#[derive(Component)]
+pub struct BoostImage {
+    pub item_type: Option<ItemType>,
+}
 
 fn draw_inventory(
     mut commands: Commands,
@@ -773,10 +778,10 @@ struct ChangeItemStatsEvent {
 }
 
 #[derive(Resource, Default)]
-struct SelectedItemStats {
-    item_type: Option<ItemType>,
-    quantity: u32,
-    sell_price: u32,
+pub struct SelectedItemStats {
+    pub item_type: Option<ItemType>,
+    pub quantity: u32,
+    pub sell_price: u32,
 }
 
 #[allow(clippy::complexity)]
