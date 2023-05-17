@@ -407,6 +407,46 @@ fn draw_inventory(
                                                         },
                                                     })
                                                     .insert(Name::new("Quantity text"));
+                                                //
+                                                commands
+                                                    .spawn(ImageBundle {
+                                                        style: Style {
+                                                            size: Size::new(
+                                                                Val::Px(inventory_width / 60.0),
+                                                                Val::Px(inventory_width / 60.0),
+                                                            ),
+                                                            position_type: PositionType::Absolute,
+                                                            position: UiRect::new(
+                                                                Val::Percent(78.0),
+                                                                Val::Percent(0.0),
+                                                                Val::Percent(2.0),
+                                                                Val::Percent(0.0),
+                                                            ),
+                                                            ..default()
+                                                        },
+                                                        image: UiImage {
+                                                            texture: {
+                                                                if i < inventory.items.len() {
+                                                                    if inventory.items[i].boosted {
+                                                                        item_icons.boost.clone()
+                                                                    } else {
+                                                                        item_icons.empty.clone()
+                                                                    }
+                                                                } else {
+                                                                    item_icons.empty.clone()
+                                                                }
+                                                            },
+                                                            ..default()
+                                                        },
+                                                        ..default()
+                                                    })
+                                                    .insert(BoostImage {
+                                                        item_type: if i < inventory.items.len() {
+                                                            Some(inventory.items[i].item_type)
+                                                        } else {
+                                                            None
+                                                        },
+                                                    });
                                             });
                                     }
                                 });
