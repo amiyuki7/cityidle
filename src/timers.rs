@@ -29,7 +29,21 @@ pub struct TimerPlugin;
 
 impl Plugin for TimerPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Timers>().add_system(tick_timers);
+        app.add_event::<RestockMarketEvent>()
+            .init_resource::<Timers>()
+            .add_system(tick_timers)
+            .add_system(restock_market);
+    }
+}
+
+struct RestockMarketEvent;
+
+fn restock_market(
+    mut market_inventory: ResMut<MarketInventory>,
+    mut restock_market_events: EventReader<RestockMarketEvent>,
+) {
+    for _ in restock_market_events.iter() {
+        *market_inventory = MarketInventory::default();
     }
 }
 
@@ -40,6 +54,7 @@ fn tick_timers(
     upgrade_data: Res<UpgradeData>,
     mut yield_stats_text: Query<(&mut Text, &YieldCountText)>,
     selected_building: ResMut<SelectedBuilding>,
+    mut send_restock_market_event: EventWriter<RestockMarketEvent>,
 ) {
     for (entity, timer) in timers.map.iter_mut() {
         timer.tick(time.delta());
@@ -60,7 +75,9 @@ fn tick_timers(
             }
 
             match target_building.as_ref().unwrap().building_type {
-                BuildingType::Market => {}
+                BuildingType::Market => {
+                    send_restock_market_event.send(RestockMarketEvent);
+                }
                 BuildingType::Construct => panic!("This is impossible"),
                 _ => {
                     // Add items to the building's yield

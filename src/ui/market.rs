@@ -1,33 +1,34 @@
 use crate::*;
 use bevy::window::PrimaryWindow;
+use rand::Rng;
 
 #[derive(Resource)]
 pub struct MarketInventory {
     pub items: [Item; 15],
-    pub balance: u32,
 }
 
 impl Default for MarketInventory {
     fn default() -> Self {
+        let mut thread_rng = rand::thread_rng();
+
         Self {
             items: [
-                Item::new(ItemType::Taffy, 26),
-                Item::new(ItemType::Nougat, 14),
-                Item::new(ItemType::Marshmallow, 3),
-                Item::new(ItemType::Coffee, 8),
-                Item::new(ItemType::Cocoa, 9),
-                Item::new(ItemType::Milkshake, 18),
-                Item::new(ItemType::Apple, 20),
-                Item::new(ItemType::Branch, 11),
-                Item::new(ItemType::Honey, 3),
-                Item::new(ItemType::Steel, 10),
-                Item::new(ItemType::Chip, 3),
-                Item::new(ItemType::Phone, 1),
-                Item::new(ItemType::Log, 10),
-                Item::new(ItemType::Lantern, 5),
-                Item::new(ItemType::Axe, 2),
+                Item::new(ItemType::Taffy, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Nougat, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Marshmallow, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Coffee, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Cocoa, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Milkshake, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Apple, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Branch, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Honey, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Steel, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Chip, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Phone, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Log, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Lantern, thread_rng.gen_range(5..=30)),
+                Item::new(ItemType::Axe, thread_rng.gen_range(5..=30)),
             ],
-            balance: 100,
         }
     }
 }
