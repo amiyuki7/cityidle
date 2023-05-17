@@ -27,8 +27,7 @@ fn main() {
                 }),
         )
         .add_plugins(
-            DefaultPickingPlugins.build(),
-            // .disable::<DebugPickingPlugin>(),
+            DefaultPickingPlugins.build().disable::<DebugPickingPlugin>(),
         )
         // .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(GridPlugin)
