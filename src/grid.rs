@@ -402,6 +402,11 @@ fn setup_buildings(
                 })
                 .id();
 
+            // Boosted items refresh every 30s
+            // This timer has no semantic meaning - I'm only using the Construct as a target entity
+            // because CityCentre is already occupied by another timer
+            timers.add_timer(building, 30);
+
             commands.entity(tile_entity).add_child(building);
         }
     }

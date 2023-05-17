@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use bevy::utils::HashMap;
+use rand::seq::IteratorRandom;
 
 use crate::*;
 
@@ -11,10 +12,10 @@ pub struct Timers {
 
 impl Timers {
     pub fn add_timer(&mut self, entity: Entity, speed: u8) {
-        self.map.insert(
-            entity,
-            Timer::new(Duration::from_secs(speed.into()), TimerMode::Repeating),
-        );
+        let mut timer = Timer::new(Duration::from_secs(speed.into()), TimerMode::Repeating);
+        // Allow the timer to run once almost instantly on spawn - its just so much nicer this way
+        timer.set_elapsed(Duration::from_secs((speed - 1).into()));
+        self.map.insert(entity, timer);
     }
 
     pub fn update_timer_speed(&mut self, entity: &Entity, speed: u8) {
@@ -30,9 +31,9 @@ pub struct TimerPlugin;
 impl Plugin for TimerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<RestockMarketEvent>()
+            .add_event::<AfterBoostUIEvent>()
             .init_resource::<Timers>()
-            .add_system(tick_timers)
-            .add_system(restock_market);
+            .add_systems((tick_timers, restock_market, after_boost_ui));
     }
 }
 
@@ -56,6 +57,35 @@ fn restock_market(
     }
 }
 
+struct AfterBoostUIEvent {
+    boosted_items: Vec<ItemType>,
+}
+
+fn after_boost_ui(
+    mut after_boost_ui_events: EventReader<AfterBoostUIEvent>,
+    mut boost_images: Query<(&mut UiImage, &BoostImage)>,
+    item_icons: Res<ItemIcons>,
+    mut item_stats_sell_price: Query<&mut Text, With<ItemStatsSellPrice>>,
+    selected_item_stats: Res<SelectedItemStats>,
+) {
+    for event in after_boost_ui_events.iter() {
+        for (mut image, boost_image) in boost_images.iter_mut() {
+            if let Some(item_type) = boost_image.item_type {
+                if event.boosted_items.contains(&item_type) {
+                    image.texture = item_icons.boost.clone();
+                } else {
+                    image.texture = item_icons.empty.clone();
+                }
+            }
+        }
+
+        if let Ok(mut text) = item_stats_sell_price.get_single_mut() {
+            text.sections[0].value = format!("Sell for: ${}", selected_item_stats.sell_price);
+        }
+    }
+}
+
+#[allow(clippy::complexity)]
 fn tick_timers(
     mut timers: ResMut<Timers>,
     mut buildings: Query<(Entity, &mut Building)>,
@@ -64,6 +94,9 @@ fn tick_timers(
     mut yield_stats_text: Query<(&mut Text, &YieldCountText)>,
     selected_building: ResMut<SelectedBuilding>,
     mut send_restock_market_event: EventWriter<RestockMarketEvent>,
+    mut send_after_boost_ui_event: EventWriter<AfterBoostUIEvent>,
+    mut inventory: ResMut<Inventory>,
+    mut selected_item_stats: ResMut<SelectedItemStats>,
 ) {
     for (entity, timer) in timers.map.iter_mut() {
         timer.tick(time.delta());
@@ -87,7 +120,55 @@ fn tick_timers(
                 BuildingType::Market => {
                     send_restock_market_event.send(RestockMarketEvent);
                 }
-                BuildingType::Construct => panic!("This is impossible"),
+                // The fact that the type is Construct has no semantic meaning - it's only being
+                // used because CityCentre is already occupied with another timer
+                BuildingType::Construct => {
+                    // Reset boosts and sell price
+                    for item in inventory.items.iter_mut() {
+                        item.boosted = false;
+                        item.sell_price = Item::get_sell_price(item.item_type);
+
+                        // If the user stays on the same item, drop the boost
+                        if let Some(item_type) = selected_item_stats.item_type {
+                            if item_type == item.item_type {
+                                selected_item_stats.sell_price = item.sell_price;
+                            }
+                        }
+                    }
+
+                    let mut rng = rand::thread_rng();
+
+                    // Choose 5 random item types to boost
+                    let random_types = inventory
+                        .items
+                        .iter()
+                        .map(|item| item.item_type)
+                        .choose_multiple(&mut rng, 5);
+
+                    for item in inventory.items.iter_mut() {
+                        if random_types.contains(&item.item_type) {
+                            item.boosted = true;
+                            item.sell_price = Item::get_sell_price(item.item_type) * 2;
+                        }
+                    }
+
+                    // If the user stays on the same item, manifest the boost
+                    if let Some(item_type) = selected_item_stats.item_type {
+                        if random_types.contains(&item_type) {
+                            selected_item_stats.sell_price = inventory
+                                .items
+                                .iter()
+                                .find(|item| item.item_type == item_type)
+                                .unwrap()
+                                .sell_price;
+                        }
+                    }
+
+                    // Send event to update all required UI components
+                    send_after_boost_ui_event.send(AfterBoostUIEvent {
+                        boosted_items: random_types,
+                    });
+                }
                 _ => {
                     // Add items to the building's yield
                     let mut building = target_building.unwrap();
