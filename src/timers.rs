@@ -41,9 +41,18 @@ struct RestockMarketEvent;
 fn restock_market(
     mut market_inventory: ResMut<MarketInventory>,
     mut restock_market_events: EventReader<RestockMarketEvent>,
+    previous_camera_state: Res<PreviousCameraState>,
+    mut send_change_camera_state_event: EventWriter<ChangeCameraStateEvent>,
+    mut next_ui_state: ResMut<NextState<UiState>>,
+    ui_state: Res<State<UiState>>,
 ) {
     for _ in restock_market_events.iter() {
         *market_inventory = MarketInventory::default();
+
+        if ui_state.0 == UiState::Market {
+            next_ui_state.set(UiState::None);
+            send_change_camera_state_event.send(ChangeCameraStateEvent(previous_camera_state.0.clone().unwrap()));
+        }
     }
 }
 
