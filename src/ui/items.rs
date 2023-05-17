@@ -29,6 +29,7 @@ pub struct ItemIcons {
     pub gold_coin: Handle<Image>,
 
     pub empty: Handle<Image>,
+    pub boost: Handle<Image>,
     pub taffy: Handle<Image>,
     pub nougat: Handle<Image>,
     pub marshmallow: Handle<Image>,
@@ -59,6 +60,7 @@ pub fn load_item_icons(mut commands: Commands, asset_server: Res<AssetServer>) {
         gold_coin: asset_server.load("icons/items/gold_coin256.png"),
 
         empty: asset_server.load("icons/items/empty256.png"),
+        boost: asset_server.load("icons/boost256.png"),
         taffy: asset_server.load("icons/items/taffy256.png"),
         nougat: asset_server.load("icons/items/nougat256.png"),
         marshmallow: asset_server.load("icons/items/marshmallow256.png"),
@@ -89,6 +91,7 @@ pub struct Item {
     pub name: String,
     pub sell_price: u32,
     pub base_buy_price: u32,
+    pub boosted: bool,
 }
 
 impl Item {
@@ -99,6 +102,7 @@ impl Item {
             name: Self::get_name(item_type),
             sell_price: Self::get_sell_price(item_type),
             base_buy_price: Self::get_base_buy_price(item_type),
+            boosted: false,
         }
     }
 
@@ -127,7 +131,7 @@ impl Item {
         .to_string()
     }
 
-    fn get_sell_price(item_type: ItemType) -> u32 {
+    pub fn get_sell_price(item_type: ItemType) -> u32 {
         use ItemType::*;
         match item_type {
             BronzeCoin => 7,
